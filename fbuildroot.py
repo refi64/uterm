@@ -102,7 +102,8 @@ def generate_gl3w(ctx):
 
 def build_gl3w(ctx, cxx):
     include, src = generate_gl3w(ctx)
-    return Record(include=include, lib=cxx.build_lib('gl3w', [src], includes=[include]))
+    return Record(includes=[include], lib=cxx.build_lib('gl3w', [src],
+                                                        includes=[include]))
 
 
 def skia_sources(*globs):
@@ -722,11 +723,18 @@ def build_skia(ctx, cxx):
     sources = skia_sources(*srcs)
     sources.append('deps/skia/third_party/gif/SkGifImageReader.cpp')
 
-    return cxx.build_lib('skia', sources, macros=['SK_ENABLE_DISCRETE_GPU'],
-                         includes=Path.glob('deps/skia/src/*') + \
-                                  Path.glob('deps/skia/include/*') + \
-                                  ['deps/skia/third_party/gif'],
-                         cflags=cflags, external_libs=libs)
+    public_includes = Path.glob('deps/skia/include/*')
+    lib = cxx.build_lib('skia', sources, macros=['SK_ENABLE_DISCRETE_GPU'],
+                        includes=Path.glob('deps/skia/src/*') + public_includes + \
+                                 ['deps/skia/third_party/gif'],
+                        cflags=cflags, external_libs=libs)
+    return Record(includes=public_includes+['deps/skia/src/gpu'], lib=lib)
+
+
+def build_fmtlib(ctx, cxx):
+  fmt = Path('deps/fmt')
+  return Record(includes=[fmt], lib=cxx.build_lib('fmt', [fmt / 'fmt' / 'format.cc'],
+                                                  include_source_dirs=False))
 
 
 def build(ctx):
@@ -735,10 +743,10 @@ def build(ctx):
     gl3w = build_gl3w(ctx, rec.cxx)
     abseil = build_abseil(ctx, rec.cxx)
     skia = build_skia(ctx, rec.cxx)
+    fmt = build_fmtlib(ctx, rec.cxx)
 
     rec.cxx.build_exe('uterm', Path.glob('src/*.cc'),
-                      includes=Path.glob('deps/skia/include/*') + \
-                               ['deps/skia/src/gpu', gl3w.include],
-                      libs=[abseil.base, abseil.strings, gl3w.lib, skia],
+                      includes=gl3w.includes + skia.includes + fmt.includes,
+                      libs=[abseil.base, abseil.strings, gl3w.lib, skia.lib, fmt.lib],
                       external_libs=['glfw', 'GL', 'dl', 'pthread'],
                       lflags=['-fuse-ld=lld'])

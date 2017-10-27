@@ -7,3 +7,6 @@
 [submodule "deps/skia"]
 	path = deps/skia
 	url = https://skia.googlesource.com/skia/
+[submodule "deps/fmt"]
+	path = deps/fmt
+	url = https://github.com/fmtlib/fmt.git
