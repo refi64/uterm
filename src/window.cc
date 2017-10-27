@@ -18,13 +18,15 @@ bool Window::isopen() {
   return !glfwWindowShouldClose(m_window);
 }
 
-Error&& Window::Initialize(int width, int height) {
+Error Window::Initialize(int width, int height) {
+  // Initialize GLFW. This must come before gl3w!
   if (!glfwInit())
     return Error::New("failed to initialize GLFW");
 
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, kGLMajor);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, kGLMinor);
 
+  // Set stuff up like Skia wants it.
   glfwWindowHint(GLFW_RED_BITS, 8);
   glfwWindowHint(GLFW_GREEN_BITS, 8);
   glfwWindowHint(GLFW_BLUE_BITS, 8);
@@ -32,18 +34,23 @@ Error&& Window::Initialize(int width, int height) {
   glfwWindowHint(GLFW_DOUBLEBUFFER, 1);
   glfwWindowHint(GLFW_DEPTH_BITS, 0);
   glfwWindowHint(GLFW_STENCIL_BITS, kStencilBits);
+  glfwWindowHint(GLFW_SAMPLES, kSamples);
 
+  // Create a window and make it the current context.
   m_window = glfwCreateWindow(width, height, "uterm", nullptr, nullptr);
   if (m_window == nullptr)
     return Error::New("failed to create window via GLFW");
 
   glfwMakeContextCurrent(m_window);
 
+  // Initialize gl3w and ensure the desired version is available.
   if (gl3wInit())
     return Error::New("failed to initialize OpenGL");
 
   if (!gl3wIsSupported(kGLMajor, kGLMinor))
     return Error::New("failed to ensure OpenGL >=3.0 is supported");
+
+  // Setup OpenGL, with the viewport based on the GLFW framebuffer size.
 
   glfwGetFramebufferSize(m_window, &m_width, &m_height);
 
@@ -52,32 +59,36 @@ Error&& Window::Initialize(int width, int height) {
   glClearStencil(0);
   glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
+  // Setup Skia.
+
   m_interface.reset(GrGLCreateNativeInterface());
   m_context = GrContext::MakeGL(m_interface.get());
   if (m_context == nullptr)
     return Error::New("failed to create GrContext");
-
 
   GrGLint buffer;
   GR_GL_GetIntegerv(m_interface.get(), GR_GL_FRAMEBUFFER_BINDING, &buffer);
 
   GrGLFramebufferInfo info;
   info.fFBOID = static_cast<GrGLuint>(buffer);
-  m_target = absl::make_unique<GrBackendRenderTarget>(m_width, m_height, kSamples, kStencilBits,
-                   kSkia8888_GrPixelConfig, info);
+  m_target = absl::make_unique<GrBackendRenderTarget>(m_width, m_height, kSamples,
+                                                      kStencilBits, kSkia8888_GrPixelConfig,
+                                                      info);
 
   SkSurfaceProps props{SkSurfaceProps::kLegacyFontHost_InitType};
 
   m_surface = SkSurface::MakeFromBackendRenderTarget(m_context.get(), *m_target,
                                                      kBottomLeft_GrSurfaceOrigin,
                                                      nullptr, &props);
+  if (m_surface == nullptr)
+    return Error::New("failed to create SkSurface");
 
   return Error::New();
 }
 
 void Window::Draw() {
   canvas()->flush();
-
   glfwSwapBuffers(m_window);
+
   glfwPollEvents();
 }

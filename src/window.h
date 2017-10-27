@@ -18,7 +18,7 @@ public:
   Window();
   ~Window();
 
-  Error&& Initialize(int width, int height);
+  Error Initialize(int width, int height);
   bool isopen();
   SkCanvas* canvas() { return m_surface->getCanvas(); }
   void Draw();

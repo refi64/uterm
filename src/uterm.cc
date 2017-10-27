@@ -8,7 +8,7 @@
 int main() {
   Window w;
   if (auto err = w.Initialize(800, 600)) {
-    puts(err.trace(0).c_str());
+    fmt::print("{}\n", err.trace(0));
     return 1;
   }
 

@@ -1,5 +1,5 @@
 #include "error.h"
-#include <iostream>
+#include <errno.h>
 
 Error::Error(): m_present{false} {}
 
@@ -7,8 +7,17 @@ Error::Error(string&& error): m_present{true} {
   Extend(std::move(error));
 }
 
+/* Error::Error(Error&& other) { *this = std::move(other); } */
+
+/* Error& Error::operator=(Error&& other) { */
+/*   m_present = other.m_present; */
+/*   m_copyable = other.m_copyable; */
+/*   m_trace = std::move(other.m_trace); */
+/*   return *this; */
+/* } */
+
 void Error::Extend(string&& error) {
-  m_trace.push_back(error);
+  m_trace.emplace_back(std::move(error));
 }
 
 size_t Error::traces() {
@@ -17,7 +26,7 @@ size_t Error::traces() {
 }
 
 string& Error::trace(size_t i) {
-  assert(m_present && i > 0 && i < m_trace.size());
+  assert(m_present && i >= 0 && i < m_trace.size());
   return m_trace[i];
 }
 
@@ -39,7 +48,7 @@ Expect<T>::operator bool() {
 }
 
 template <typename T>
-Error&& Expect<T>::Error() {
+Error Expect<T>::Error() {
   ::Error* ptr = absl::any_cast<::Error>(&m_value);
   assert(ptr != nullptr);
   ::Error&& res = std::move(*ptr);
@@ -47,7 +56,7 @@ Error&& Expect<T>::Error() {
   m_value.reset();
 
   res.m_copyable = false;
-  return std::move(res);
+  return res;
 }
 
 template <typename T>
