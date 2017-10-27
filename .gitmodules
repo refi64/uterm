@@ -1,0 +1,9 @@
+[submodule "deps/gl3w"]
+	path = deps/gl3w
+	url = https://github.com/skaslev/gl3w
+[submodule "deps/abseil"]
+	path = deps/abseil
+	url = https://github.com/abseil/abseil-cpp
+[submodule "deps/skia"]
+	path = deps/skia
+	url = https://skia.googlesource.com/skia/
