@@ -1,6 +1,7 @@
 #pragma once
 
 #include "uterm.h"
+#include "error.h"
 
 #include <functional>
 
@@ -23,9 +24,9 @@ public:
   using DrawCb = std::function<void(const string&, Pos)>;
 
   void set_draw(DrawCb draw);
-  /* void set_connection(int fd); */
+  void set_connection(int fd);
   void WriteToScreen(string text);
-  /* void KeyboardToFd(uint32_t keysym, int mods); */
+  Error KeyboardToFd(uint32 keysym, int mods);
   void Draw();
 private:
   static void StaticWrite(tsm_vte *vte, const char *u8, size_t len, void *data);
@@ -39,5 +40,5 @@ private:
   tsm_vte *m_vte;
 
   int m_age{0};
-  /* int m_connection{-1}; */
+  int m_connection{-1};
 };
