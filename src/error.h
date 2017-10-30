@@ -10,7 +10,7 @@ class Error {
 public:
   Error();
   Error(const char* str): Error{string{str}} {}
-  Error(string&& error);
+  Error(const string& error);
   ~Error()=default;
 
   static Error New() { return std::move(Error{}); }
@@ -18,7 +18,7 @@ public:
   static Error New(Arg&& arg) { return std::move(Error{arg}); }
   static Error Errno() { return Error::New(strerror(errno)); }
 
-  void Extend(string&& error);
+  Error& Extend(const string& error);
 
   size_t traces();
   string& trace(size_t i);
@@ -28,15 +28,15 @@ private:
   template <typename T>
   friend class Expect;
 
-  bool m_present, m_copyable{false};
+  bool m_present;
   std::vector<string> m_trace;
 };
 
 template <typename T>
 class Expect {
 public:
-  Expect(T&& value);
-  Expect(Error&& error);
+  Expect(const T& value);
+  Expect(const Error& error);
 
   template <typename Arg>
   static Expect<T> New(Arg&& arg) { return std::move(Expect<T>{arg}); }

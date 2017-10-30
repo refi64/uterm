@@ -9,15 +9,30 @@ void draw(const string& str, Pos pos) {
 }
 
 int main() {
+  Pty pty;
+  if (auto err = pty.Spawn({"/bin/echo", "123"})) {
+    fmt::print("{}\n", err.trace(0));
+    return 1;
+  }
+
   Terminal term;
   term.set_draw(draw);
+  term.set_pty(&pty);
 
-  term.WriteToScreen("abc");
-  term.Draw();
-  fmt::print("\n\n\n");
-  term.WriteToScreen("d");
-  term.Draw();
-  fmt::print("\n\n\n");
+  for (;;) {
+    if (auto e_text = pty.NonblockingRead()) {
+      if (e_text->empty())
+        continue;
+
+      term.WriteToScreen(*e_text);
+      term.Draw();
+      fmt::print("\n\n\n");
+    } else {
+      auto err = e_text.Error();
+      fmt::print("{}\n", err.trace(0));
+      return 1;
+    }
+  }
 
   return 0;
 

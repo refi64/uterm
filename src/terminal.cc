@@ -9,7 +9,7 @@ Terminal::Terminal() {
 }
 
 void Terminal::set_draw(DrawCb draw) { m_draw = draw; }
-void Terminal::set_connection(int fd) { m_connection = fd; }
+void Terminal::set_pty(Pty *pty) { m_pty = pty; }
 
 void Terminal::WriteToScreen(string text) {
   tsm_vte_input(m_vte, text.c_str(), text.size());
@@ -27,9 +27,9 @@ void Terminal::Draw() {
 void Terminal::StaticWrite(tsm_vte *vte, const char *u8, size_t len, void *data) {
   Terminal *term = static_cast<Terminal*>(data);
 
-  if (term->m_connection != -1) {
-    if (write(term->m_connection, u8, len) == -1) {
-      fmt::print("WARNING: error writing in StaticWrite: {}\n", strerror(errno));
+  if (term->m_pty != nullptr) {
+    if (auto err = term->m_pty->Write(string(u8, len))) {
+      fmt::print("WARNING: error writing in StaticWrite: {}\n", err.trace(0));
     }
   }
 }

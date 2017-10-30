@@ -2,6 +2,7 @@
 
 #include "uterm.h"
 #include "error.h"
+#include "pty.h"
 
 #include <functional>
 
@@ -24,7 +25,7 @@ public:
   using DrawCb = std::function<void(const string&, Pos)>;
 
   void set_draw(DrawCb draw);
-  void set_connection(int fd);
+  void set_pty(Pty* pty);
   void WriteToScreen(string text);
   Error KeyboardToFd(uint32 keysym, int mods);
   void Draw();
@@ -40,5 +41,5 @@ private:
   tsm_vte *m_vte;
 
   int m_age{0};
-  int m_connection{-1};
+  Pty *m_pty;
 };
