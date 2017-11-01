@@ -58,8 +58,17 @@ int main() {
   };
 
   auto resize = [&](int width, int height) {
-    fmt::print("{} {} {} {}\n", width, height, width / metrics.fAvgCharWidth, height / kFontSize);
+    int nrows = height / kFontSize;
+    int ncols = width / metrics.fAvgCharWidth;
+
+    rows.resize(nrows);
+    for (auto& row : rows) {
+      row.resize(ncols, ' ');
+    }
+    term.Resize(ncols, nrows);
   };
+
+  resize(800, 600);
 
   w.set_key_cb(key);
   w.set_char_cb(char_);

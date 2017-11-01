@@ -11,7 +11,7 @@
 #include <X11/XKBlib.h>
 #undef Window
 
-const int kGLMajor = 3, kGLMinor = 0, kSamples = 4, kStencilBits = 8;
+const int kGLMajor = 3, kGLMinor = 0, kSamples = 0, kStencilBits = 8;
 
 Window::Window() {}
 
@@ -55,7 +55,8 @@ Error Window::Initialize(int width, int height) {
   glfwSetWindowUserPointer(m_window, static_cast<void*>(this));
   glfwSetKeyCallback(m_window, StaticKeyCallback);
   glfwSetCharCallback(m_window, StaticCharCallback);
-  glfwSetFramebufferSizeCallback(m_window, StaticResizeCallback);
+  glfwSetWindowSizeCallback(m_window, StaticWinResizeCallback);
+  glfwSetFramebufferSizeCallback(m_window, StaticFbResizeCallback);
 
   if (gl3wInit())
     return Error::New("failed to initialize OpenGL");
@@ -63,9 +64,9 @@ Error Window::Initialize(int width, int height) {
   if (!gl3wIsSupported(kGLMajor, kGLMinor))
     return Error::New("failed to ensure OpenGL >=3.0 is supported");
 
-  glfwGetFramebufferSize(m_window, &m_width, &m_height);
+  glfwGetFramebufferSize(m_window, &m_fb_width, &m_fb_height);
 
-  glViewport(0, 0, m_width, m_height);
+  glViewport(0, 0, m_fb_width, m_fb_height);
   glClearColor(1, 1, 1, 1);
   glClearStencil(0);
   glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -97,7 +98,7 @@ void Window::Draw() {
 Error Window::CreateSurface() {
   m_surface.reset();
 
-  m_target = absl::make_unique<GrBackendRenderTarget>(m_width, m_height, kSamples,
+  m_target = absl::make_unique<GrBackendRenderTarget>(m_fb_width, m_fb_height, kSamples,
                                                       kStencilBits,
                                                       kSkia8888_GrPixelConfig,
                                                       m_info);
@@ -135,16 +136,23 @@ void Window::StaticCharCallback(GLFWwindow *glfw_window, uint code) {
   window->m_char_cb(code);
 }
 
-void Window::StaticResizeCallback(GLFWwindow *glfw_window, int width, int height) {
+void Window::StaticWinResizeCallback(GLFWwindow *glfw_window, int width, int height) {
+  Window *window = static_cast<Window*>(glfwGetWindowUserPointer(glfw_window));
+  window->m_resize_cb(width, height);
+}
+
+void Window::StaticFbResizeCallback(GLFWwindow *glfw_window, int width, int height) {
   Window *window = static_cast<Window*>(glfwGetWindowUserPointer(glfw_window));
 
-  window->m_width = width;
-  window->m_height = height;
+  window->m_fb_width = width;
+  window->m_fb_height = height;
   glViewport(0, 0, width, height);
 
   if (auto err = window->CreateSurface()) {
     err.Extend("in StaticResizeCallback").Print();
   }
 
-  window->m_resize_cb(width, height);
+  /* int win_width, win_height; */
+  /* glfwGetWindowSize(window->m_window, &win_width, &win_height); */
+  /* window->m_resize_cb(win_width, win_height); */
 }

@@ -40,10 +40,12 @@ private:
   static void StaticKeyCallback(GLFWwindow *glfw_window, int key, int scancode,
                                 int action, int glfw_mods);
   static void StaticCharCallback(GLFWwindow *glfw_window, uint code);
-  static void StaticResizeCallback(GLFWwindow *glfw_window, int width, int height);
+  static void StaticWinResizeCallback(GLFWwindow *glfw_window, int width, int height);
+  static void StaticFbResizeCallback(GLFWwindow *glfw_window, int width, int height);
 
   GLFWwindow *m_window{nullptr};
-  int m_width, m_height;
+  int m_fb_width, m_fb_height;
+  int m_win_resize_width{-1}, m_win_resize_height{-1};
   GrGLFramebufferInfo m_info;
   sk_sp<const GrGLInterface> m_interface;
   sk_sp<GrContext> m_context;
