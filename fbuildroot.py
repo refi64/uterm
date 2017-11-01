@@ -5,20 +5,16 @@ from fbuild.record import Record
 from fbuild.path import Path
 import fbuild.db
 
-from optparse import make_option
 
-
-def pre_options(parser):
-    group = parser.add_option_group('config options')
-    group.add_options((
-        make_option('--cxx', help='Use the given C++ compiler'),
-        make_option('--cxxflag', help='Pass the given flag to the C++ compiler',
-                    action='append', default=[]),
-        make_option('--use-color', help='Force C++ compiler colored output',
-                    action='store_true', default=True),
-        make_option('--release', help='Build in release mode',
-                    action='store_true', default=False),
-    ))
+def arguments(parser):
+    group = parser.add_argument_group('config options')
+    group.add_argument('--cxx', help='Use the given C++ compiler')
+    group.add_argument('--cxxflag', help='Pass the given flag to the C++ compiler',
+                       action='append', default=[])
+    group.add_argument('--use-color', help='Force C++ compiler colored output',
+                       action='store_true', default=True)
+    group.add_argument('--release', help='Build in release mode', action='store_true',
+                       default=False)
 
 
 def configure(ctx):
