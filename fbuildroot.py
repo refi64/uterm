@@ -77,6 +77,10 @@ def build_abseil(ctx, cxx):
                                                   'strings/internal/*.cc'),
                                    libs=[abseil.base, abseil.numeric])
 
+    abseil.stacktrace = cxx.build_lib('abseil_stacktrace',
+                                      abseil_sources('debugging/stacktrace.cc',
+                                                     'debugging/internal/*.cc'))
+
     return abseil
 
 
@@ -743,5 +747,7 @@ def build(ctx):
 
     rec.cxx.build_exe('uterm', Path.glob('src/*.cc'),
                       includes=gl3w.includes + skia.includes + fmt.includes,
-                      libs=[abseil.base, abseil.strings, gl3w.lib, skia.lib, fmt.lib],
-                      external_libs=['glfw', 'GL', 'tsm', 'X11', 'dl', 'pthread'])
+                      libs=[abseil.base, abseil.strings, abseil.stacktrace, gl3w.lib,
+                            skia.lib, fmt.lib],
+                      external_libs=['glfw', 'GL', 'tsm', 'X11', 'dl', 'pthread'],
+                      lflags=['-fuse-ld=lld'])

@@ -10,15 +10,17 @@ class Error {
 public:
   Error();
   Error(const char* str): Error{string{str}} {}
-  Error(const string& error);
+  Error(const string& error, int skip=1);
   ~Error()=default;
 
   static Error New() { return std::move(Error{}); }
   template <typename Arg>
-  static Error New(Arg&& arg) { return std::move(Error{arg}); }
+  static Error New(Arg&& arg) { return std::move(Error{arg, 2}); }
   static Error Errno() { return Error::New(strerror(errno)); }
 
   Error& Extend(const string& error);
+
+  void Print();
 
   size_t traces();
   string& trace(size_t i);
@@ -30,6 +32,7 @@ private:
 
   bool m_present;
   std::vector<string> m_trace;
+  std::vector<void*> m_stack;
 };
 
 template <typename T>
@@ -41,8 +44,8 @@ public:
   template <typename Arg>
   static Expect<T> New(Arg&& arg) { return std::move(Expect<T>{arg}); }
 
-  static Expect WithError(const char* error) { return New(::Error{error}); }
-  static Expect WithError(string&& error) { return New(::Error{std::move(error)}); }
+  static Expect WithError(const char* error) { return New(::Error{error, 2}); }
+  static Expect WithError(string&& error) { return New(::Error{std::move(error), 2}); }
 
   operator bool();
   Error Error();

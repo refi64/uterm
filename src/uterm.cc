@@ -3,6 +3,7 @@
 #include "terminal.h"
 
 #include <SkTypeface.h>
+#include <SkFont.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
 
 int main() {
@@ -16,7 +17,7 @@ int main() {
 
   Pty pty;
   if (auto err = pty.Spawn({"/bin/bash", "-i"})) {
-    fmt::print("{}\n", err.trace(0));
+    err.Extend("while initializing pty").Print();
     return 1;
   }
 
@@ -26,20 +27,9 @@ int main() {
 
   Window w;
   if (auto err = w.Initialize(800, 600)) {
-    fmt::print("{}\n", err.trace(0));
+    err.Extend("while initializing window").Print();
     return 1;
   }
-
-  auto key = [&](uint32 keysym, int mods) {
-    term.WriteKeysymToPty(keysym, mods);
-  };
-
-  auto char_ = [&](uint code) {
-    term.WriteUnicodeToPty(code);
-  };
-
-  w.set_key_cb(key);
-  w.set_char_cb(char_);
 
   sk_sp<SkTypeface> robotoMono{SkTypeface::MakeFromName("Roboto Mono", SkFontStyle{})};
 
@@ -51,17 +41,40 @@ int main() {
   paint.setAntiAlias(true);
   paint.setTypeface(robotoMono);
 
-  SkCanvas* canvas = w.canvas();
+  SkPaint::FontMetrics metrics;
+  paint.getFontMetrics(&metrics);
+  fmt::print("{}\n", metrics.fAvgCharWidth);
+
+  SkRect bounds;
+  paint.measureText("x", 1, &bounds);
+  fmt::print("{}\n", bounds.width());
+
+  auto key = [&](uint32 keysym, int mods) {
+    term.WriteKeysymToPty(keysym, mods);
+  };
+
+  auto char_ = [&](uint code) {
+    term.WriteUnicodeToPty(code);
+  };
+
+  auto resize = [&](int width, int height) {
+    fmt::print("{} {} {} {}\n", width, height, width / metrics.fAvgCharWidth, height / kFontSize);
+  };
+
+  w.set_key_cb(key);
+  w.set_char_cb(char_);
+  w.set_resize_cb(resize);
 
   while (w.isopen()) {
+    SkCanvas* canvas = w.canvas();
+
     if (auto e_text = pty.NonblockingRead()) {
       if (!e_text->empty()) {
         term.WriteToScreen(*e_text);
         term.Draw();
       }
     } else {
-      auto err = e_text.Error();
-      fmt::print("{}\n", err.trace(0));
+      e_text.Error().Print();
       return 1;
     }
 

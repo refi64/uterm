@@ -92,7 +92,7 @@ Error Pty::Spawn(const std::vector<string>& command) {
     auto err = ChildSpawnTerm(command, w_slave.Relinquish());
 
     if (err) {
-      fmt::print("error: {}\n", err.trace(0));
+      err.Extend("in Pty::Spawn slave process").Print();
       exit(1);
     }
 

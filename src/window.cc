@@ -11,7 +11,7 @@
 #include <X11/XKBlib.h>
 #undef Window
 
-const int kGLMajor = 3, kGLMinor = 0, kSamples = 0, kStencilBits = 8;
+const int kGLMajor = 3, kGLMinor = 0, kSamples = 4, kStencilBits = 8;
 
 Window::Window() {}
 
@@ -21,6 +21,7 @@ Window::~Window() {
 
 void Window::set_key_cb(KeyCb key_cb) { m_key_cb = key_cb; }
 void Window::set_char_cb(CharCb char_cb) { m_char_cb = char_cb; }
+void Window::set_resize_cb(ResizeCb resize_cb) { m_resize_cb = resize_cb; }
 
 bool Window::isopen() {
   assert(m_window);
@@ -54,6 +55,7 @@ Error Window::Initialize(int width, int height) {
   glfwSetWindowUserPointer(m_window, static_cast<void*>(this));
   glfwSetKeyCallback(m_window, StaticKeyCallback);
   glfwSetCharCallback(m_window, StaticCharCallback);
+  glfwSetFramebufferSizeCallback(m_window, StaticResizeCallback);
 
   if (gl3wInit())
     return Error::New("failed to initialize OpenGL");
@@ -76,11 +78,29 @@ Error Window::Initialize(int width, int height) {
   GrGLint buffer;
   GR_GL_GetIntegerv(m_interface.get(), GR_GL_FRAMEBUFFER_BINDING, &buffer);
 
-  GrGLFramebufferInfo info;
-  info.fFBOID = static_cast<GrGLuint>(buffer);
+  m_info.fFBOID = static_cast<GrGLuint>(buffer);
+
+  if (auto err = CreateSurface()) {
+    return err;
+  } else {
+    return Error::New();
+  }
+}
+
+void Window::Draw() {
+  canvas()->flush();
+  glfwSwapBuffers(m_window);
+
+  glfwPollEvents();
+}
+
+Error Window::CreateSurface() {
+  m_surface.reset();
+
   m_target = absl::make_unique<GrBackendRenderTarget>(m_width, m_height, kSamples,
-                                                      kStencilBits, kSkia8888_GrPixelConfig,
-                                                      info);
+                                                      kStencilBits,
+                                                      kSkia8888_GrPixelConfig,
+                                                      m_info);
 
   SkSurfaceProps props{SkSurfaceProps::kLegacyFontHost_InitType};
 
@@ -91,13 +111,6 @@ Error Window::Initialize(int width, int height) {
     return Error::New("failed to create SkSurface");
 
   return Error::New();
-}
-
-void Window::Draw() {
-  canvas()->flush();
-  glfwSwapBuffers(m_window);
-
-  glfwPollEvents();
 }
 
 void Window::StaticKeyCallback(GLFWwindow *glfw_window, int key, int scancode,
@@ -120,4 +133,18 @@ void Window::StaticKeyCallback(GLFWwindow *glfw_window, int key, int scancode,
 void Window::StaticCharCallback(GLFWwindow *glfw_window, uint code) {
   Window *window = static_cast<Window*>(glfwGetWindowUserPointer(glfw_window));
   window->m_char_cb(code);
+}
+
+void Window::StaticResizeCallback(GLFWwindow *glfw_window, int width, int height) {
+  Window *window = static_cast<Window*>(glfwGetWindowUserPointer(glfw_window));
+
+  window->m_width = width;
+  window->m_height = height;
+  glViewport(0, 0, width, height);
+
+  if (auto err = window->CreateSurface()) {
+    err.Extend("in StaticResizeCallback").Print();
+  }
+
+  window->m_resize_cb(width, height);
 }
