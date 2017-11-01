@@ -3,17 +3,16 @@
 #include "terminal.h"
 
 #include <SkTypeface.h>
-
-std::vector<string>* rows;
-
-void draw(const string& str, Pos pos) {
-  (*rows)[pos.y][pos.x] = str[0];
-  /* fmt::print("{} {} {},", pos.x, pos.y, str[0]); */
-}
+#include <xkbcommon/xkbcommon-keysyms.h>
 
 int main() {
   string s(80, ' ');
-  rows = new std::vector<string>(25, s);
+  std::vector<string> rows(25, s);
+
+  auto draw = [&](const string& str, Pos pos) {
+    /* if (str[0]) fmt::print("{} {} {},\n", pos.x, pos.y, str[0]); */
+    rows[pos.y][pos.x] = str[0] ? str[0] : ' ';
+  };
 
   Pty pty;
   if (auto err = pty.Spawn({"/bin/bash", "-i"})) {
@@ -22,7 +21,7 @@ int main() {
   }
 
   Terminal term;
-  term.set_draw(draw);
+  term.set_draw_cb(draw);
   term.set_pty(&pty);
 
   Window w;
@@ -30,6 +29,17 @@ int main() {
     fmt::print("{}\n", err.trace(0));
     return 1;
   }
+
+  auto key = [&](uint32 keysym, int mods) {
+    term.WriteKeysymToPty(keysym, mods);
+  };
+
+  auto char_ = [&](uint code) {
+    term.WriteUnicodeToPty(code);
+  };
+
+  w.set_key_cb(key);
+  w.set_char_cb(char_);
 
   sk_sp<SkTypeface> robotoMono{SkTypeface::MakeFromName("Roboto Mono", SkFontStyle{})};
 
@@ -56,8 +66,8 @@ int main() {
     }
 
     canvas->clear(SK_ColorWHITE);
-    for (int i=0; i<rows->size(); i++) {
-      auto& row = (*rows)[i];
+    for (int i=0; i<rows.size(); i++) {
+      auto& row = rows[i];
       canvas->drawText(row.c_str(), row.size(), 0, kFontSize*(i+1), paint);
     }
     w.Draw();

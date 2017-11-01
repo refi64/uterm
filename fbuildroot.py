@@ -748,5 +748,4 @@ def build(ctx):
     rec.cxx.build_exe('uterm', Path.glob('src/*.cc'),
                       includes=gl3w.includes + skia.includes + fmt.includes,
                       libs=[abseil.base, abseil.strings, gl3w.lib, skia.lib, fmt.lib],
-                      external_libs=['glfw', 'GL', 'tsm', 'dl', 'pthread'],
-                      lflags=['-fuse-ld=lld'])
+                      external_libs=['glfw', 'GL', 'tsm', 'X11', 'dl', 'pthread'])

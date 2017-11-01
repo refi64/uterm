@@ -29,21 +29,6 @@ private:
 static Error ChildSpawnTerm(const std::vector<string>& command, int slave) {
   FdWrapper w_slave{slave};
 
-  // Set terminal settings.
-
-  termios termattr;
-  if (tcgetattr(slave, &termattr) == -1) {
-    return Error::Errno().Extend("tcgetattr of terminal");
-  }
-
-  cfmakeraw(&termattr);
-
-  if (tcsetattr(slave, TCSANOW, &termattr) == -1) {
-    return Error::Errno().Extend("tcsetattr of terminal");
-  }
-
-  // Update file descriptors to point to slave pty.
-
   close(0);
   close(1);
   close(2);

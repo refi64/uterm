@@ -11,19 +11,32 @@
 #include <SkCanvas.h>
 #include <SkSurface.h>
 
-#include <memory>
+#include <functional>
 
 class Window {
 public:
+  using KeyCb = std::function<void(uint32, int)>;
+  using CharCb = std::function<void(uint)>;
+
   Window();
   ~Window();
+
+  void set_key_cb(KeyCb key_cb);
+  void set_char_cb(CharCb char_cb);
 
   Error Initialize(int width, int height);
   bool isopen();
   SkCanvas* canvas() { return m_surface->getCanvas(); }
   void Draw();
 private:
-  GLFWwindow* m_window{nullptr};
+  KeyCb m_key_cb;
+  CharCb m_char_cb;
+
+  static void StaticKeyCallback(GLFWwindow *glfw_window, int key, int scancode,
+                                int action, int glfw_mods);
+  static void StaticCharCallback(GLFWwindow *glfw_window, uint code);
+
+  GLFWwindow *m_window{nullptr};
   int m_width, m_height;
   sk_sp<const GrGLInterface> m_interface;
   sk_sp<GrContext> m_context;

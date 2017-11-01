@@ -1,9 +1,15 @@
 #include "window.h"
+#include "terminal.h"
 
 #include <gl/GrGLInterface.h>
 #include <gl/GrGLUtil.h>
 
 #include <absl/memory/memory.h>
+
+// Grrrr...
+#define Window XWindow
+#include <X11/XKBlib.h>
+#undef Window
 
 const int kGLMajor = 3, kGLMinor = 0, kSamples = 0, kStencilBits = 8;
 
@@ -13,13 +19,15 @@ Window::~Window() {
   glfwTerminate();
 }
 
+void Window::set_key_cb(KeyCb key_cb) { m_key_cb = key_cb; }
+void Window::set_char_cb(CharCb char_cb) { m_char_cb = char_cb; }
+
 bool Window::isopen() {
   assert(m_window);
   return !glfwWindowShouldClose(m_window);
 }
 
 Error Window::Initialize(int width, int height) {
-  // Initialize GLFW. This must come before gl3w!
   if (!glfwInit())
     return Error::New("failed to initialize GLFW");
 
@@ -36,21 +44,22 @@ Error Window::Initialize(int width, int height) {
   glfwWindowHint(GLFW_STENCIL_BITS, kStencilBits);
   glfwWindowHint(GLFW_SAMPLES, kSamples);
 
-  // Create a window and make it the current context.
   m_window = glfwCreateWindow(width, height, "uterm", nullptr, nullptr);
   if (m_window == nullptr)
     return Error::New("failed to create window via GLFW");
 
   glfwMakeContextCurrent(m_window);
 
-  // Initialize gl3w and ensure the desired version is available.
+  glfwSetInputMode(m_window, GLFW_STICKY_KEYS, 1);
+  glfwSetWindowUserPointer(m_window, static_cast<void*>(this));
+  glfwSetKeyCallback(m_window, StaticKeyCallback);
+  glfwSetCharCallback(m_window, StaticCharCallback);
+
   if (gl3wInit())
     return Error::New("failed to initialize OpenGL");
 
   if (!gl3wIsSupported(kGLMajor, kGLMinor))
     return Error::New("failed to ensure OpenGL >=3.0 is supported");
-
-  // Setup OpenGL, with the viewport based on the GLFW framebuffer size.
 
   glfwGetFramebufferSize(m_window, &m_width, &m_height);
 
@@ -58,8 +67,6 @@ Error Window::Initialize(int width, int height) {
   glClearColor(1, 1, 1, 1);
   glClearStencil(0);
   glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-  // Setup Skia.
 
   m_interface.reset(GrGLCreateNativeInterface());
   m_context = GrContext::MakeGL(m_interface.get());
@@ -91,4 +98,26 @@ void Window::Draw() {
   glfwSwapBuffers(m_window);
 
   glfwPollEvents();
+}
+
+void Window::StaticKeyCallback(GLFWwindow *glfw_window, int key, int scancode,
+                               int action, int glfw_mods){
+  Window *window = static_cast<Window*>(glfwGetWindowUserPointer(glfw_window));
+
+  if (action != GLFW_PRESS) return;
+
+  int mods = 0;
+  if (glfw_mods & GLFW_MOD_SHIFT) mods |= KeyboardModifier::kShift;
+  if (glfw_mods & GLFW_MOD_CONTROL) mods |= KeyboardModifier::kControl;
+  if (glfw_mods & GLFW_MOD_ALT) mods |= KeyboardModifier::kAlt;
+  if (glfw_mods & GLFW_MOD_SUPER) mods |= KeyboardModifier::kSuper;
+
+  uint32 keysym = XkbKeycodeToKeysym(XOpenDisplay(nullptr), scancode, 0,
+                                     mods & KeyboardModifier::kShift ? 1 : 0);
+  window->m_key_cb(keysym, mods);
+}
+
+void Window::StaticCharCallback(GLFWwindow *glfw_window, uint code) {
+  Window *window = static_cast<Window*>(glfwGetWindowUserPointer(glfw_window));
+  window->m_char_cb(code);
 }

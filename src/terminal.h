@@ -10,10 +10,9 @@
 
 namespace KeyboardModifier {
   constexpr int kShift = TSM_SHIFT_MASK,
-                kLock = TSM_LOCK_MASK,
                 kControl = TSM_CONTROL_MASK,
                 kAlt = TSM_ALT_MASK,
-                kLogo = TSM_LOGO_MASK;
+                kSuper = TSM_LOGO_MASK;
 };
 
 struct Pos { int x, y; };
@@ -24,10 +23,11 @@ public:
 
   using DrawCb = std::function<void(const string&, Pos)>;
 
-  void set_draw(DrawCb draw);
+  void set_draw_cb(DrawCb draw_cb);
   void set_pty(Pty* pty);
   void WriteToScreen(string text);
-  Error KeyboardToFd(uint32 keysym, int mods);
+  bool WriteKeysymToPty(uint32 keysym, int mods);
+  bool WriteUnicodeToPty(uint32 code);
   void Draw();
 private:
   static void StaticWrite(tsm_vte *vte, const char *u8, size_t len, void *data);
@@ -35,7 +35,7 @@ private:
                         uint width, uint posx, uint posy, const tsm_screen_attr *attr,
                         tsm_age_t age, void *data);
 
-  DrawCb m_draw;
+  DrawCb m_draw_cb;
 
   tsm_screen *m_screen;
   tsm_vte *m_vte;
