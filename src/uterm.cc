@@ -56,6 +56,10 @@ int main() {
         term.Draw();
       }
     } else {
+      auto err = e_text.Error();
+      if (err.trace(0).find("EOF") != -1) {
+        break;
+      }
       e_text.Error().Print();
       continue;
     }

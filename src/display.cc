@@ -9,6 +9,7 @@ Display::Display(Terminal *term): m_term{term} {
   m_fallback_paint.setColor(SK_ColorWHITE);
   m_fallback_paint.setAntiAlias(true);
   m_fallback_paint.setTextEncoding(SkPaint::kUTF32_TextEncoding);
+  m_primary_paint.setSubpixelText(true);
 
   using namespace std::placeholders;
   m_term->set_draw_cb(std::bind(&Display::TermDraw, this, _1, _2, _3));
@@ -41,6 +42,7 @@ void Display::Resize(int width, int height) {
   m_text_positions.resize(m_rows*m_cols);
   m_primary_glyphs.resize(m_rows*m_cols);
   m_fallback_glyphs.resize(m_rows*m_cols);
+  m_fallbacks.resize(m_rows*m_cols);
   m_term->Resize(m_cols, m_rows);
   UpdatePositions();
 }
@@ -52,6 +54,10 @@ void Display::Draw(SkCanvas *canvas) {
   canvas->drawPosText(m_primary_glyphs.data(),
                       m_primary_glyphs.size() * sizeof(m_primary_glyphs[0]),
                       m_text_positions.data(), m_primary_paint);
+  m_fallback_paint.setTextEncoding(SkPaint::kGlyphID_TextEncoding);
+  canvas->drawPosText(m_fallback_glyphs.data(),
+                      m_fallback_glyphs.size() * sizeof(m_fallback_glyphs[0]),
+                      m_text_positions.data(), m_fallback_paint);
 }
 
 void Display::TermDraw(const u32string& str, Pos pos, int width) {
@@ -104,7 +110,18 @@ void Display::UpdateGlyphs() {
 
 void Display::UpdateGlyph(int x, int y) {
   int index = y * m_cols + x;
+
   m_primary_paint.setTextEncoding(SkPaint::kUTF32_TextEncoding);
   m_primary_paint.textToGlyphs(&m_text[index], sizeof(m_text[0]),
                                &m_primary_glyphs[index]);
+
+  m_fallback_paint.setTextEncoding(SkPaint::kUTF32_TextEncoding);
+  if (!m_primary_glyphs[index]) {
+    m_fallback_paint.textToGlyphs(&m_text[index], sizeof(m_text[0]),
+                                  &m_fallback_glyphs[index]);
+    m_fallbacks[index] = true;
+  } else {
+    char32_t space = ' ';
+    m_fallback_paint.textToGlyphs(&space, sizeof(space), &m_fallback_glyphs[index]);
+  }
 }

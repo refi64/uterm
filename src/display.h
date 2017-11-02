@@ -36,5 +36,6 @@ private:
   u32string m_text;
   std::vector<SkPoint> m_text_positions;
   std::vector<SkGlyphID> m_primary_glyphs, m_fallback_glyphs;
+  std::vector<bool> m_fallbacks;
   int m_rows, m_cols;
 };
