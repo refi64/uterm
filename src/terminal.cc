@@ -53,9 +53,8 @@ int Terminal::StaticDraw(tsm_screen *screen, uint32 id, const uint32 *chars, siz
     return 0;
   }
 
-  char utf32_bytes[4] = {0};
-  std::copy(chars, chars + len, utf32_bytes);
-  string utf32(utf32_bytes, sizeof(utf32_bytes));
+  u32string utf32(len, '\0');
+  std::copy(chars, chars + len, utf32.begin());
 
   Pos pos;
   pos.x = posx;

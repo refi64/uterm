@@ -7,11 +7,10 @@
 #include <xkbcommon/xkbcommon-keysyms.h>
 
 int main() {
-  string s(80, ' ');
-  std::vector<string> rows(25, s);
+  u32string s(80, ' ');
+  std::vector<u32string> rows(25, s);
 
-  auto draw = [&](const string& str, Pos pos) {
-    /* if (str[0]) fmt::print("{} {} {},\n", pos.x, pos.y, str[0]); */
+  auto draw = [&](const u32string& str, Pos pos) {
     rows[pos.y][pos.x] = str[0] ? str[0] : ' ';
   };
 
@@ -36,18 +35,19 @@ int main() {
   constexpr SkScalar kFontSize = SkIntToScalar(15);
 
   SkPaint paint;
-  paint.setColor(SK_ColorBLACK);
+  paint.setColor(SK_ColorWHITE);
   paint.setTextSize(kFontSize);
   paint.setAntiAlias(true);
   paint.setTypeface(robotoMono);
+  paint.setTextEncoding(SkPaint::kUTF32_TextEncoding);
 
   SkPaint::FontMetrics metrics;
   paint.getFontMetrics(&metrics);
   fmt::print("{}\n", metrics.fAvgCharWidth);
 
-  SkRect bounds;
-  paint.measureText("x", 1, &bounds);
-  fmt::print("{}\n", bounds.width());
+  /* SkRect bounds; */
+  /* paint.measureText("x\0\0\0", 4, &bounds); */
+  /* fmt::print("{}\n", bounds.width()); */
 
   auto key = [&](uint32 keysym, int mods) {
     term.WriteKeysymToPty(keysym, mods);
@@ -87,10 +87,11 @@ int main() {
       return 1;
     }
 
-    canvas->clear(SK_ColorWHITE);
+    canvas->clear(SK_ColorBLACK);
     for (int i=0; i<rows.size(); i++) {
       auto& row = rows[i];
-      canvas->drawText(row.c_str(), row.size(), 0, kFontSize*(i+1), paint);
+      canvas->drawText(row.c_str(), row.size()*sizeof(row[0]), 0, kFontSize*(i+1),
+                       paint);
     }
     w.Draw();
   }
