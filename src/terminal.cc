@@ -60,6 +60,6 @@ int Terminal::StaticDraw(tsm_screen *screen, uint32 id, const uint32 *chars, siz
   pos.x = posx;
   pos.y = posy;
 
-  term->m_draw_cb(utf32, pos);
+  term->m_draw_cb(utf32, pos, width);
   return 0;
 }

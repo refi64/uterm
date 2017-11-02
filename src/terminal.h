@@ -21,7 +21,7 @@ class Terminal {
 public:
   Terminal();
 
-  using DrawCb = std::function<void(const u32string&, Pos)>;
+  using DrawCb = std::function<void(const u32string&, Pos, int)>;
 
   void set_draw_cb(DrawCb draw_cb);
   void set_pty(Pty* pty);

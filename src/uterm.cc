@@ -1,19 +1,11 @@
 #include "uterm.h"
 #include "window.h"
 #include "terminal.h"
+#include "display.h"
 
-#include <SkTypeface.h>
-#include <SkFont.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
 
 int main() {
-  u32string s(80, ' ');
-  std::vector<u32string> rows(25, s);
-
-  auto draw = [&](const u32string& str, Pos pos) {
-    rows[pos.y][pos.x] = str[0] ? str[0] : ' ';
-  };
-
   Pty pty;
   if (auto err = pty.Spawn({"/bin/bash", "-i"})) {
     err.Extend("while initializing pty").Print();
@@ -21,8 +13,9 @@ int main() {
   }
 
   Terminal term;
-  term.set_draw_cb(draw);
   term.set_pty(&pty);
+
+  Display disp{&term};
 
   Window w;
   if (auto err = w.Initialize(800, 600)) {
@@ -30,24 +23,11 @@ int main() {
     return 1;
   }
 
-  sk_sp<SkTypeface> robotoMono{SkTypeface::MakeFromName("Roboto Mono", SkFontStyle{})};
+  disp.SetPrimaryFont("Roboto Mono");
+  disp.SetFallbackFont("Noto Sans");
 
   constexpr SkScalar kFontSize = SkIntToScalar(15);
-
-  SkPaint paint;
-  paint.setColor(SK_ColorWHITE);
-  paint.setTextSize(kFontSize);
-  paint.setAntiAlias(true);
-  paint.setTypeface(robotoMono);
-  paint.setTextEncoding(SkPaint::kUTF32_TextEncoding);
-
-  SkPaint::FontMetrics metrics;
-  paint.getFontMetrics(&metrics);
-  fmt::print("{}\n", metrics.fAvgCharWidth);
-
-  /* SkRect bounds; */
-  /* paint.measureText("x\0\0\0", 4, &bounds); */
-  /* fmt::print("{}\n", bounds.width()); */
+  disp.SetTextSize(kFontSize);
 
   auto key = [&](uint32 keysym, int mods) {
     term.WriteKeysymToPty(keysym, mods);
@@ -58,14 +38,7 @@ int main() {
   };
 
   auto resize = [&](int width, int height) {
-    int nrows = height / kFontSize;
-    int ncols = width / metrics.fAvgCharWidth;
-
-    rows.resize(nrows);
-    for (auto& row : rows) {
-      row.resize(ncols, ' ');
-    }
-    term.Resize(ncols, nrows);
+    disp.Resize(width, height);
   };
 
   resize(800, 600);
@@ -84,15 +57,11 @@ int main() {
       }
     } else {
       e_text.Error().Print();
-      return 1;
+      continue;
     }
 
     canvas->clear(SK_ColorBLACK);
-    for (int i=0; i<rows.size(); i++) {
-      auto& row = rows[i];
-      canvas->drawText(row.c_str(), row.size()*sizeof(row[0]), 0, kFontSize*(i+1),
-                       paint);
-    }
+    disp.Draw(canvas);
     w.Draw();
   }
 
