@@ -21,6 +21,9 @@ private:
   void TermDraw(const u32string& str, Pos pos, int width);
   void UpdateFont(SkPaint *paint, sk_sp<SkTypeface> *font, string name);
   void UpdateWidth();
+  void UpdatePositions();
+  void UpdateGlyphs();
+  void UpdateGlyph(int x, int y);
 
   Terminal *m_term;
   sk_sp<SkTypeface> m_primary_font;
@@ -30,5 +33,8 @@ private:
   sk_sp<SkTypeface> m_fallback_font;
   SkPaint m_fallback_paint;
 
-  std::vector<u32string> m_rows;
+  u32string m_text;
+  std::vector<SkPoint> m_text_positions;
+  std::vector<SkGlyphID> m_primary_glyphs, m_fallback_glyphs;
+  int m_rows, m_cols;
 };

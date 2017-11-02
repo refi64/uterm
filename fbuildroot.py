@@ -749,5 +749,5 @@ def build(ctx):
                       includes=gl3w.includes + skia.includes + fmt.includes,
                       libs=[abseil.base, abseil.strings, abseil.stacktrace, gl3w.lib,
                             skia.lib, fmt.lib],
-                      external_libs=['glfw', 'GL', 'tsm', 'X11', 'dl', 'pthread'],
+                      external_libs=['glfw', 'GL', 'tsm', 'X11', 'dl', 'pthread', 'profiler'],
                       lflags=['-fuse-ld=lld'])

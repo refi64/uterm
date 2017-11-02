@@ -48,7 +48,7 @@ int main() {
   w.set_resize_cb(resize);
 
   while (w.isopen()) {
-    SkCanvas* canvas = w.canvas();
+    SkCanvas *canvas = w.canvas();
 
     if (auto e_text = pty.NonblockingRead()) {
       if (!e_text->empty()) {
