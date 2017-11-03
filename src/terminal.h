@@ -25,6 +25,9 @@ public:
 
   void set_draw_cb(DrawCb draw_cb);
   void set_pty(Pty* pty);
+
+  Pos cursor();
+
   void Resize(int x, int y);
   void WriteToScreen(string text);
   bool WriteKeysymToPty(uint32 keysym, int mods);

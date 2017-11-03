@@ -30,5 +30,6 @@ private:
 
   TextManager m_text;
   GlyphRenderer m_primary, m_fallback;
+  SkPaint m_cursor_paint;
   std::vector<bool> m_fallbacks;
 };

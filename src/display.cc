@@ -3,6 +3,9 @@
 Display::Display(Terminal *term): m_term{term} {
   using namespace std::placeholders;
   m_term->set_draw_cb(std::bind(&Display::TermDraw, this, _1, _2, _3));
+
+  m_cursor_paint.setColor(SK_ColorWHITE);
+  m_cursor_paint.setAntiAlias(true);
 }
 
 void Display::SetTextSize(int size) {
@@ -26,16 +29,18 @@ void Display::SetFallbackFont(string name) {
 void Display::Resize(int width, int height) {
   assert(m_char_width != -1);
 
-  int rows = height / m_primary.GetHeight();
+  int rows = (height - (m_primary.GetFullHeight() - m_primary.GetHeight())) /
+             m_primary.GetHeight();
   int cols = width / m_char_width;
 
   m_fallbacks.resize(rows * cols);
 
-  m_term->Resize(cols, rows);
   m_text.Resize(cols, rows);
 
   m_primary.Resize(rows * cols);
   m_fallback.Resize(rows * cols);
+
+  m_term->Resize(cols, rows);
 
   UpdatePositions();
 }
@@ -43,6 +48,12 @@ void Display::Resize(int width, int height) {
 void Display::Draw(SkCanvas *canvas) {
   m_text.DrawWithRenderer(canvas, &m_primary);
   m_text.DrawWithRenderer(canvas, &m_fallback);
+
+  Pos cursor = m_term->cursor();
+  SkRect cursor_rect = SkRect::MakeXYWH(m_char_width * cursor.x,
+                                        m_primary.GetHeight() * cursor.y,
+                                        m_char_width, m_primary.GetFullHeight());
+  canvas->drawRect(cursor_rect, m_cursor_paint);
 }
 
 void Display::TermDraw(const u32string& str, Pos pos, int width) {

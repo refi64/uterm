@@ -118,7 +118,7 @@ void Window::StaticKeyCallback(GLFWwindow *glfw_window, int key, int scancode,
                                int action, int glfw_mods){
   Window *window = static_cast<Window*>(glfwGetWindowUserPointer(glfw_window));
 
-  if (action != GLFW_PRESS) return;
+  if (action != GLFW_PRESS && action != GLFW_REPEAT) return;
 
   int mods = 0;
   if (glfw_mods & GLFW_MOD_SHIFT) mods |= KeyboardModifier::kShift;

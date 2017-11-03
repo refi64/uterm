@@ -13,6 +13,13 @@ Terminal::Terminal() {
 void Terminal::set_draw_cb(DrawCb draw_cb) { m_draw_cb = draw_cb; }
 void Terminal::set_pty(Pty *pty) { m_pty = pty; }
 
+Pos Terminal::cursor() {
+  Pos pos;
+  pos.x = tsm_screen_get_cursor_x(m_screen);
+  pos.y = tsm_screen_get_cursor_y(m_screen);
+  return pos;
+}
+
 void Terminal::Resize(int x, int y) {
   tsm_screen_resize(m_screen, x, y);
 }

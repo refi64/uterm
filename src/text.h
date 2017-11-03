@@ -19,12 +19,16 @@ public:
   bool UpdateGlyph(char32_t c, int index);
   void ClearGlyph(int index);
   int GetHeight();
+  int GetFullHeight();
   int GetWidth();
 
   void Draw(SkCanvas *canvas, SkPoint *positions);
 private:
   SkPaint m_paint;
+
   sk_sp<SkTypeface> m_font;
+  SkPaint::FontMetrics m_metrics;
+
   std::vector<SkGlyphID> m_glyphs;
   SkGlyphID m_space_glyph;
 };
@@ -47,7 +51,6 @@ public:
   void DrawWithRenderer(SkCanvas *canvas, GlyphRenderer *renderer);
 private:
   int m_cols{0}, m_rows{0};
-
   std::u32string m_text;
   std::vector<SkPoint> m_positions;
 };

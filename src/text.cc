@@ -13,6 +13,7 @@ void GlyphRenderer::Resize(int size) {
 
 void GlyphRenderer::SetTextSize(int height) {
   m_paint.setTextSize(SkIntToScalar(height));
+  m_paint.getFontMetrics(&m_metrics);
 }
 
 void GlyphRenderer::SetFont(string name) {
@@ -21,6 +22,8 @@ void GlyphRenderer::SetFont(string name) {
 
   char32_t space = ' ';
   m_paint.textToGlyphs(&space, sizeof(space), &m_space_glyph);
+
+  m_paint.getFontMetrics(&m_metrics);
 }
 
 bool GlyphRenderer::UpdateGlyph(char32_t c, int index) {
@@ -37,11 +40,13 @@ int GlyphRenderer::GetHeight() {
   return m_paint.getTextSize();
 }
 
+int GlyphRenderer::GetFullHeight() {
+  return GetHeight() + m_metrics.fBottom;
+}
+
 int GlyphRenderer::GetWidth() {
-  SkPaint::FontMetrics metrics;
-  m_paint.getFontMetrics(&metrics);
-  if (metrics.fAvgCharWidth) {
-    return metrics.fAvgCharWidth;
+  if (m_metrics.fAvgCharWidth) {
+    return m_metrics.fAvgCharWidth;
   }
 
   SkRect bounds;
