@@ -26,7 +26,6 @@ void Display::SetFallbackFont(string name) {
 void Display::Resize(int width, int height) {
   assert(m_char_width != -1);
 
-  fmt::print("{} {}\n", m_char_width, width / m_char_width);
   int rows = height / m_primary.GetHeight();
   int cols = width / m_char_width;
 
@@ -43,7 +42,7 @@ void Display::Resize(int width, int height) {
 
 void Display::Draw(SkCanvas *canvas) {
   m_text.DrawWithRenderer(canvas, &m_primary);
-  /* m_text.DrawWithRenderer(canvas, &m_fallback); */
+  m_text.DrawWithRenderer(canvas, &m_fallback);
 }
 
 void Display::TermDraw(const u32string& str, Pos pos, int width) {
@@ -74,9 +73,9 @@ void Display::UpdateGlyph(int x, int y) {
 
   if (m_primary.UpdateGlyph(c, index)) {
     m_fallbacks[index] = false;
-    /* m_fallback.ClearGlyph(index); */
-  } {
+    m_fallback.ClearGlyph(index);
+  } else {
     m_fallbacks[index] = true;
-    /* m_fallback.UpdateGlyph(c, index); */
+    m_fallback.UpdateGlyph(c, index);
   }
 }
