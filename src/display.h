@@ -6,6 +6,7 @@
 
 #include "uterm.h"
 #include "terminal.h"
+#include "text.h"
 
 class Display {
 public:
@@ -19,23 +20,15 @@ public:
   void Draw(SkCanvas *canvas);
 private:
   void TermDraw(const u32string& str, Pos pos, int width);
-  void UpdateFont(SkPaint *paint, sk_sp<SkTypeface> *font, string name);
   void UpdateWidth();
   void UpdatePositions();
   void UpdateGlyphs();
   void UpdateGlyph(int x, int y);
 
   Terminal *m_term;
-  sk_sp<SkTypeface> m_primary_font;
-  SkPaint m_primary_paint;
   int m_char_width{-1};
 
-  sk_sp<SkTypeface> m_fallback_font;
-  SkPaint m_fallback_paint;
-
-  u32string m_text;
-  std::vector<SkPoint> m_text_positions;
-  std::vector<SkGlyphID> m_primary_glyphs, m_fallback_glyphs;
+  TextManager m_text;
+  GlyphRenderer m_primary, m_fallback;
   std::vector<bool> m_fallbacks;
-  int m_rows, m_cols;
 };

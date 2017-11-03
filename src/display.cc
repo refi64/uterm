@@ -1,127 +1,82 @@
 #include "display.h"
 
 Display::Display(Terminal *term): m_term{term} {
-  m_primary_paint.setColor(SK_ColorWHITE);
-  m_primary_paint.setAntiAlias(true);
-  m_primary_paint.setTextEncoding(SkPaint::kUTF32_TextEncoding);
-  m_primary_paint.setSubpixelText(true);
-
-  m_fallback_paint.setColor(SK_ColorWHITE);
-  m_fallback_paint.setAntiAlias(true);
-  m_fallback_paint.setTextEncoding(SkPaint::kUTF32_TextEncoding);
-  m_primary_paint.setSubpixelText(true);
-
   using namespace std::placeholders;
   m_term->set_draw_cb(std::bind(&Display::TermDraw, this, _1, _2, _3));
 }
 
 void Display::SetTextSize(int size) {
-  m_primary_paint.setTextSize(SkIntToScalar(size));
-  m_fallback_paint.setTextSize(SkIntToScalar(size));
+  m_primary.SetTextSize(size);
+  m_fallback.SetTextSize(size);
   UpdateWidth();
   UpdateGlyphs();
 }
 
 void Display::SetPrimaryFont(string name) {
-  UpdateFont(&m_primary_paint, &m_primary_font, name);
+  m_primary.SetFont(name);
   UpdateWidth();
   UpdateGlyphs();
 }
 
 void Display::SetFallbackFont(string name) {
-  UpdateFont(&m_fallback_paint, &m_fallback_font, name);
+  m_fallback.SetFont(name);
+  UpdateGlyphs();
 }
 
 void Display::Resize(int width, int height) {
   assert(m_char_width != -1);
 
-  m_rows = height / m_primary_paint.getTextSize();
-  m_cols = width / m_char_width;
+  fmt::print("{} {}\n", m_char_width, width / m_char_width);
+  int rows = height / m_primary.GetHeight();
+  int cols = width / m_char_width;
 
-  m_text.resize(m_rows*m_cols, ' ');
-  m_text_positions.resize(m_rows*m_cols);
-  m_primary_glyphs.resize(m_rows*m_cols);
-  m_fallback_glyphs.resize(m_rows*m_cols);
-  m_fallbacks.resize(m_rows*m_cols);
-  m_term->Resize(m_cols, m_rows);
+  m_fallbacks.resize(rows * cols);
+
+  m_term->Resize(cols, rows);
+  m_text.Resize(cols, rows);
+
+  m_primary.Resize(rows * cols);
+  m_fallback.Resize(rows * cols);
+
   UpdatePositions();
 }
 
 void Display::Draw(SkCanvas *canvas) {
-  auto height = m_primary_paint.getTextSize();
-
-  m_primary_paint.setTextEncoding(SkPaint::kGlyphID_TextEncoding);
-  canvas->drawPosText(m_primary_glyphs.data(),
-                      m_primary_glyphs.size() * sizeof(m_primary_glyphs[0]),
-                      m_text_positions.data(), m_primary_paint);
-  m_fallback_paint.setTextEncoding(SkPaint::kGlyphID_TextEncoding);
-  canvas->drawPosText(m_fallback_glyphs.data(),
-                      m_fallback_glyphs.size() * sizeof(m_fallback_glyphs[0]),
-                      m_text_positions.data(), m_fallback_paint);
+  m_text.DrawWithRenderer(canvas, &m_primary);
+  /* m_text.DrawWithRenderer(canvas, &m_fallback); */
 }
 
 void Display::TermDraw(const u32string& str, Pos pos, int width) {
-  char32_t *cell = &m_text[pos.y * m_cols + pos.x];
-  *cell = str[0] ? str[0] : ' ';
+  m_text.set_cell(pos.x, pos.y, str[0] ? str[0] : ' ');
   UpdateGlyph(pos.x, pos.y);
 }
 
-void Display::UpdateFont(SkPaint *paint, sk_sp<SkTypeface> *font, string name) {
-  *font = SkTypeface::MakeFromName(name.c_str(), SkFontStyle{});
-  paint->setTypeface(*font);
-}
-
 void Display::UpdateWidth() {
-  SkPaint::FontMetrics metrics;
-  m_primary_paint.getFontMetrics(&metrics);
-  if (metrics.fAvgCharWidth) {
-    m_char_width = metrics.fAvgCharWidth;
-    return;
-  }
-
-  SkRect bounds;
-  u32string s{'x'};
-  m_primary_paint.measureText(s.c_str(), sizeof(s[0]), &bounds);
-  m_char_width = bounds.width();
-
+  m_char_width = m_primary.GetWidth();
   UpdatePositions();
 }
 
 void Display::UpdatePositions() {
-  assert(m_text.size() == m_text_positions.size());
-  int height = m_primary_paint.getTextSize();
-
-  for (int i=0; i<m_rows; i++) {
-    for (int j=0; j<m_cols; j++) {
-      SkPoint *point = &m_text_positions[i * m_cols + j];
-      point->fX = m_char_width * j;
-      point->fY = height * (i + 1);
-    }
-  }
+  m_text.UpdatePositions(m_primary.GetHeight(), m_char_width);
 }
 
 void Display::UpdateGlyphs() {
-  for (int i=0; i<m_rows; i++) {
-    for (int j=0; j<m_cols; j++) {
+  for (int i=0; i<m_text.rows(); i++) {
+    for (int j=0; j<m_text.cols(); j++) {
       UpdateGlyph(i, j);
     }
   }
 }
 
 void Display::UpdateGlyph(int x, int y) {
-  int index = y * m_cols + x;
+  int index = y * m_text.cols() + x;
+  char32_t c = m_text.cell(x, y);
 
-  m_primary_paint.setTextEncoding(SkPaint::kUTF32_TextEncoding);
-  m_primary_paint.textToGlyphs(&m_text[index], sizeof(m_text[0]),
-                               &m_primary_glyphs[index]);
-
-  m_fallback_paint.setTextEncoding(SkPaint::kUTF32_TextEncoding);
-  if (!m_primary_glyphs[index]) {
-    m_fallback_paint.textToGlyphs(&m_text[index], sizeof(m_text[0]),
-                                  &m_fallback_glyphs[index]);
+  if (m_primary.UpdateGlyph(c, index)) {
+    m_fallbacks[index] = false;
+    /* m_fallback.ClearGlyph(index); */
+  } {
     m_fallbacks[index] = true;
-  } else {
-    char32_t space = ' ';
-    m_fallback_paint.textToGlyphs(&space, sizeof(space), &m_fallback_glyphs[index]);
+    /* m_fallback.UpdateGlyph(c, index); */
   }
 }
