@@ -11,6 +11,9 @@
 #include <X11/XKBlib.h>
 #undef Window
 
+#define GLFW_EXPOSE_NATIVE_X11
+#include <GLFW/glfw3native.h>
+
 const int kGLMajor = 3, kGLMinor = 0, kSamples = 0, kStencilBits = 8;
 
 Window::Window() {}
@@ -126,7 +129,7 @@ void Window::StaticKeyCallback(GLFWwindow *glfw_window, int key, int scancode,
   if (glfw_mods & GLFW_MOD_ALT) mods |= KeyboardModifier::kAlt;
   if (glfw_mods & GLFW_MOD_SUPER) mods |= KeyboardModifier::kSuper;
 
-  uint32 keysym = XkbKeycodeToKeysym(XOpenDisplay(nullptr), scancode, 0,
+  uint32 keysym = XkbKeycodeToKeysym(glfwGetX11Display(), scancode, 0,
                                      mods & KeyboardModifier::kShift ? 1 : 0);
   window->m_key_cb(keysym, mods);
 }
@@ -151,8 +154,4 @@ void Window::StaticFbResizeCallback(GLFWwindow *glfw_window, int width, int heig
   if (auto err = window->CreateSurface()) {
     err.Extend("in StaticResizeCallback").Print();
   }
-
-  /* int win_width, win_height; */
-  /* glfwGetWindowSize(window->m_window, &win_width, &win_height); */
-  /* window->m_resize_cb(win_width, win_height); */
 }
