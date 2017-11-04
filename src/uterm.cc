@@ -47,6 +47,9 @@ int main() {
   w.set_char_cb(char_);
   w.set_resize_cb(resize);
 
+  SkCanvas *canvas = w.canvas();
+  canvas->clear(SK_ColorBLACK);
+
   while (w.isopen()) {
     SkCanvas *canvas = w.canvas();
 
@@ -64,7 +67,6 @@ int main() {
       continue;
     }
 
-    canvas->clear(SK_ColorBLACK);
     disp.Draw(canvas);
     w.Draw();
   }

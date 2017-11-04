@@ -12,6 +12,7 @@ public:
     const Data &data;
   };
 
+  void Update(size_t begin, size_t end, Data data);
   void Update(size_t index, Data data);
   void Shrink(size_t sz);
 
@@ -37,19 +38,28 @@ private:
   std::vector<Marker*> m_indexes;
 };
 
+template <typename Data, typename Hash>
+void MarkerSet<Data, Hash>::Update(size_t begin, size_t end, Data data) {
+  assert(begin >= 0 && end <= m_indexes.size());
+
+  auto it = m_markers.emplace(data).first;
+  // XXX: we don't modify Marker's data, so it's hash should stay intact.
+  auto m = const_cast<Marker*>(&*it);
+
+  for (size_t i = begin; i < end; i++) {
+    m->refc++;
+    SetMarker(i, m);
+  }
+}
 
 template <typename Data, typename Hash>
 void MarkerSet<Data, Hash>::Update(size_t index, Data data) {
   if (index >= m_indexes.size()) {
     assert(m_indexes.size() == index);
-    m_indexes.resize(index+1, nullptr);
+    m_indexes.resize(index + 1, nullptr);
   }
 
-  auto it = m_markers.emplace(data).first;
-  // XXX: we don't modify Marker's data, so it's hash should stay intact.
-  auto m = const_cast<Marker*>(&*it);
-  m->refc++;
-  SetMarker(index, m);
+  Update(index, index + 1, data);
 }
 
 template <typename Data, typename Hash>

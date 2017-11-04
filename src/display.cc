@@ -47,17 +47,23 @@ void Display::Resize(int width, int height) {
 void Display::Draw(SkCanvas *canvas) {
   Pos cursor = m_term->cursor();
 
-  AttrSet::Span *span = nullptr;
-  while ((span = m_attrs.NextSpan(span))) {
-    HighlightRange(canvas, m_text.OffsetToPos(span->begin),
-                   m_text.OffsetToPos(span->end), span->data.background);
+  std::vector<AttrSet::Span> dirty;
+  AttrSet::Span *pspan = nullptr;
+  while ((pspan = m_attrs.NextSpan(pspan))) {
+    if (!pspan->data.dirty) continue;
+
+    dirty.push_back(*pspan);
+    HighlightRange(canvas, m_text.OffsetToPos(pspan->begin),
+                   m_text.OffsetToPos(pspan->end), pspan->data.background);
   }
 
-  span = nullptr;
-  while ((span = m_attrs.NextSpan(span))) {
-    m_text.DrawRangeWithRenderer(canvas, &m_primary, span->data, span->begin, span->end);
-    m_text.DrawRangeWithRenderer(canvas, &m_fallback,  span->data, span->begin,
-                                 span->end);
+  for (auto &span : dirty) {
+    m_text.DrawRangeWithRenderer(canvas, &m_primary, span.data, span.begin, span.end);
+    m_text.DrawRangeWithRenderer(canvas, &m_fallback,  span.data, span.begin, span.end);
+
+    Attr attr = span.data;
+    attr.dirty = false;
+    m_attrs.Update(span.begin, span.end, attr);
   }
 
   HighlightRange(canvas, cursor, {cursor.x+1, cursor.y}, SK_ColorWHITE);
@@ -67,6 +73,7 @@ void Display::TermDraw(const u32string& str, Pos pos, Attr attr, int width) {
   m_text.set_cell(pos.x, pos.y, str[0] ? str[0] : ' ');
   UpdateGlyph(pos.x, pos.y);
 
+  attr.dirty = true;
   m_attrs.Update(pos.y * m_text.cols() + pos.x, attr);
 }
 

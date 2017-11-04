@@ -29,6 +29,7 @@ struct Attr {
                        kInverse = 1<<3,
                        kProtect = 1<<4;
   int flags;
+  bool dirty;
 
   bool operator==(const Attr &rhs) const {
     return foreground == rhs.foreground && background == rhs.background &&
@@ -47,6 +48,7 @@ struct Attr {
       combine(&hash, attr.foreground);
       combine(&hash, attr.background);
       combine(&hash, attr.flags);
+      combine(&hash, attr.dirty);
       return hash;
     }
   };
