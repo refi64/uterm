@@ -4,6 +4,7 @@
 #include "error.h"
 #include "pty.h"
 
+#include <SkColor.h>
 #include <functional>
 
 #include <libtsm.h>
@@ -15,13 +16,47 @@ namespace KeyboardModifier {
                 kSuper = TSM_LOGO_MASK;
 };
 
-struct Pos { int x, y; };
+struct Pos {
+  Pos(uint nx, uint ny): x{nx}, y{ny} {}
+  uint x, y;
+};
+
+struct Attr {
+  SkColor foreground, background;
+
+  static constexpr int kBold = 1<<1,
+                       kUnderline = 1<<2,
+                       kInverse = 1<<3,
+                       kProtect = 1<<4;
+  int flags;
+
+  bool operator==(const Attr &rhs) const {
+    return foreground == rhs.foreground && background == rhs.background &&
+           flags == rhs.flags;
+  }
+
+  struct Hash {
+    template <typename T>
+    static void combine(size_t *current, T value) {
+      std::hash<T> hasher;
+      *current ^= hasher(value) + 0x9e3779b9 + (*current << 6) + (*current >> 2);
+    }
+
+    size_t operator()(const Attr &attr) const {
+      size_t hash = 0;
+      combine(&hash, attr.foreground);
+      combine(&hash, attr.background);
+      combine(&hash, attr.flags);
+      return hash;
+    }
+  };
+};
 
 class Terminal {
 public:
   Terminal();
 
-  using DrawCb = std::function<void(const u32string&, Pos, int)>;
+  using DrawCb = std::function<void(const u32string&, Pos, Attr, int)>;
 
   void set_draw_cb(DrawCb draw_cb);
   void set_pty(Pty* pty);

@@ -14,10 +14,7 @@ void Terminal::set_draw_cb(DrawCb draw_cb) { m_draw_cb = draw_cb; }
 void Terminal::set_pty(Pty *pty) { m_pty = pty; }
 
 Pos Terminal::cursor() {
-  Pos pos;
-  pos.x = tsm_screen_get_cursor_x(m_screen);
-  pos.y = tsm_screen_get_cursor_y(m_screen);
-  return pos;
+  return {tsm_screen_get_cursor_x(m_screen), tsm_screen_get_cursor_y(m_screen)};
 }
 
 void Terminal::Resize(int x, int y) {
@@ -63,10 +60,25 @@ int Terminal::StaticDraw(tsm_screen *screen, uint32 id, const uint32 *chars, siz
   u32string utf32(len, '\0');
   std::copy(chars, chars + len, utf32.begin());
 
-  Pos pos;
-  pos.x = posx;
-  pos.y = posy;
+  Pos pos{posx, posy};
 
-  term->m_draw_cb(utf32, pos, width);
+  Attr nattr;
+  nattr.foreground = SkColorSetRGB(attr->fr, attr->fg, attr->fb);
+  nattr.background = SkColorSetRGB(attr->br, attr->bg, attr->bb);
+  nattr.flags = 0;
+  if (attr->bold) {
+    nattr.flags |= Attr::kBold;
+  }
+  if (attr->underline) {
+    nattr.flags |= Attr::kUnderline;
+  }
+  if (attr->inverse) {
+    nattr.flags |= Attr::kInverse;
+  }
+  if (attr->protect) {
+    nattr.flags |= Attr::kProtect;
+  }
+
+  term->m_draw_cb(utf32, pos, nattr, width);
   return 0;
 }

@@ -37,11 +37,7 @@ void GlyphRenderer::ClearGlyph(int index) {
 }
 
 int GlyphRenderer::GetHeight() {
-  return m_paint.getTextSize();
-}
-
-int GlyphRenderer::GetFullHeight() {
-  return GetHeight() + m_metrics.fBottom;
+  return m_paint.getTextSize() + m_metrics.fBottom;
 }
 
 int GlyphRenderer::GetWidth() {
@@ -55,10 +51,16 @@ int GlyphRenderer::GetWidth() {
   return bounds.width();
 }
 
-void GlyphRenderer::Draw(SkCanvas *canvas, SkPoint *positions) {
+int GlyphRenderer::GetBaselineOffset() {
+  return m_metrics.fBottom;
+}
+
+void GlyphRenderer::DrawRange(SkCanvas *canvas, SkPoint *positions, Attr attrs,
+                              size_t begin, size_t end) {
   m_paint.setTextEncoding(SkPaint::kGlyphID_TextEncoding);
-  canvas->drawPosText(m_glyphs.data(), m_glyphs.size() * sizeof(m_glyphs[0]), positions,
-                      m_paint);
+  m_paint.setColor(attrs.foreground);
+  canvas->drawPosText(m_glyphs.data() + begin, (end - begin) * sizeof(m_glyphs[0]),
+                      positions + begin, m_paint);
 }
 
 TextManager::TextManager() {}
@@ -91,6 +93,7 @@ void TextManager::UpdatePositions(int height, int width) {
   }
 }
 
-void TextManager::DrawWithRenderer(SkCanvas *canvas, GlyphRenderer *renderer) {
-  renderer->Draw(canvas, m_positions.data());
+void TextManager::DrawRangeWithRenderer(SkCanvas *canvas, GlyphRenderer *renderer,
+                                        Attr attrs, size_t begin, size_t end) {
+  renderer->DrawRange(canvas, m_positions.data(), attrs, begin, end);
 }

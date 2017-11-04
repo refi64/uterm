@@ -5,6 +5,7 @@
 #include <SkPaint.h>
 
 #include "uterm.h"
+#include "terminal.h"
 
 // A GlyphRenderer knows little about its textual contents. Its sole goal is to store
 // glyphs in a horizontal array, and then render them using the given positions when
@@ -19,10 +20,11 @@ public:
   bool UpdateGlyph(char32_t c, int index);
   void ClearGlyph(int index);
   int GetHeight();
-  int GetFullHeight();
   int GetWidth();
+  int GetBaselineOffset();
 
-  void Draw(SkCanvas *canvas, SkPoint *positions);
+  void DrawRange(SkCanvas *canvas, SkPoint *positions, Attr attrs, size_t begin,
+                 size_t end);
 private:
   SkPaint m_paint;
 
@@ -48,9 +50,12 @@ public:
   void Resize(int x, int y);
   void UpdatePositions(int height, int width);
 
-  void DrawWithRenderer(SkCanvas *canvas, GlyphRenderer *renderer);
+  Pos OffsetToPos(uint offset) { return {offset % m_cols, offset / m_cols}; }
+
+  void DrawRangeWithRenderer(SkCanvas *canvas, GlyphRenderer *renderer, Attr attrs,
+                             size_t begin, size_t end);
 private:
-  int m_cols{0}, m_rows{0};
+  uint m_cols{0}, m_rows{0};
   std::u32string m_text;
   std::vector<SkPoint> m_positions;
 };
