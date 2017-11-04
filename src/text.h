@@ -50,6 +50,8 @@ public:
   void Resize(int x, int y);
   void UpdatePositions(int height, int width);
 
+  uint PosToOffset(int x, int y) { return y * m_cols + x; }
+  uint PosToOffset(Pos pos) { return PosToOffset(pos.x, pos.y); }
   Pos OffsetToPos(uint offset) { return {offset % m_cols, offset / m_cols}; }
 
   void DrawRangeWithRenderer(SkCanvas *canvas, GlyphRenderer *renderer, Attr attrs,

@@ -12,6 +12,7 @@ public:
     const Data &data;
   };
 
+  const Data & At(size_t index);
   void Update(size_t begin, size_t end, Data data);
   void Update(size_t index, Data data);
   void Shrink(size_t sz);
@@ -37,6 +38,11 @@ private:
   std::unordered_set<Marker, MarkerHash> m_markers;
   std::vector<Marker*> m_indexes;
 };
+
+template <typename Data, typename Hash>
+const Data & MarkerSet<Data, Hash>::At(size_t index) {
+  return m_indexes[index]->data;
+}
 
 template <typename Data, typename Hash>
 void MarkerSet<Data, Hash>::Update(size_t begin, size_t end, Data data) {

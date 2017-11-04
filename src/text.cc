@@ -5,6 +5,7 @@ GlyphRenderer::GlyphRenderer() {
   m_paint.setAntiAlias(true);
   m_paint.setTextEncoding(SkPaint::kUTF32_TextEncoding);
   m_paint.setSubpixelText(true);
+  m_paint.setBlendMode(SkBlendMode::kSrc);
 }
 
 void GlyphRenderer::Resize(int size) {

@@ -4,7 +4,8 @@ Display::Display(Terminal *term): m_term{term} {
   using namespace std::placeholders;
   m_term->set_draw_cb(std::bind(&Display::TermDraw, this, _1, _2, _3, _4));
 
-  m_highlight_paint.setAntiAlias(true);
+  /* m_highlight_paint.setAntiAlias(true); */
+  /* m_highlight_paint.setBlendMode(SkBlendMode::kDst); */
 }
 
 void Display::SetTextSize(int size) {
@@ -67,6 +68,12 @@ void Display::Draw(SkCanvas *canvas) {
   }
 
   HighlightRange(canvas, cursor, {cursor.x+1, cursor.y}, SK_ColorWHITE);
+
+  // Mark the cell with the cursor as dirty, so it'll be redrawn next frame.
+  uint cursor_offset = m_text.PosToOffset(cursor);
+  Attr cursor_cell_attr = m_attrs.At(cursor_offset);
+  cursor_cell_attr.dirty = true;
+  m_attrs.Update(cursor_offset, cursor_cell_attr);
 }
 
 void Display::TermDraw(const u32string& str, Pos pos, Attr attr, int width) {
@@ -74,7 +81,7 @@ void Display::TermDraw(const u32string& str, Pos pos, Attr attr, int width) {
   UpdateGlyph(pos.x, pos.y);
 
   attr.dirty = true;
-  m_attrs.Update(pos.y * m_text.cols() + pos.x, attr);
+  m_attrs.Update(m_text.PosToOffset(pos), attr);
 }
 
 void Display::UpdateWidth() {
@@ -95,7 +102,7 @@ void Display::UpdateGlyphs() {
 }
 
 void Display::UpdateGlyph(int x, int y) {
-  int index = y * m_text.cols() + x;
+  int index = m_text.PosToOffset(x, y);
   char32_t c = m_text.cell(x, y);
 
   if (m_primary.UpdateGlyph(c, index)) {
@@ -109,7 +116,7 @@ void Display::UpdateGlyph(int x, int y) {
 
 void Display::HighlightRange(SkCanvas *canvas, Pos begin, Pos end, SkColor color) {
   assert(begin.y <= end.y);
-  m_highlight_paint.setColor(color);
+  /* m_highlight_paint.setColor(color); */
 
   for (int y = begin.y; y <= end.y; y++) {
     int first = y == begin.y ? begin.x : 0,
@@ -119,6 +126,10 @@ void Display::HighlightRange(SkCanvas *canvas, Pos begin, Pos end, SkColor color
                                     m_primary.GetBaselineOffset(),
                                    m_char_width * (last - first),
                                    m_primary.GetHeight());
-    canvas->drawRect(rect, m_highlight_paint);
+    canvas->save();
+    canvas->clipRect(rect, false);
+    canvas->clear(color == SK_ColorBLACK ? SK_ColorRED : color);
+    canvas->restore();
+    /* canvas->drawRect(rect, m_highlight_paint); */
   }
 }

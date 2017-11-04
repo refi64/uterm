@@ -48,7 +48,7 @@ int main() {
   w.set_resize_cb(resize);
 
   SkCanvas *canvas = w.canvas();
-  canvas->clear(SK_ColorBLACK);
+  canvas->clear(SK_ColorWHITE);
 
   while (w.isopen()) {
     SkCanvas *canvas = w.canvas();
