@@ -92,7 +92,7 @@ def generate_gl3w(ctx):
     cmd = [python3, 'deps/gl3w/gl3w_gen.py', '--root', outdir]
 
     ctx.execute(cmd, 'gl3w_gen.py', 'gl3w.c gl3w.h glcorearb.h', color='compile',
-                quieter=1)
+                stdout_quieter=1)
     ctx.db.add_external_dependencies_to_call(
         srcs=['deps/gl3w/gl3w_gen.py'],
         dsts=[outdir / 'include' / 'gl3w.h', outdir / 'include' / 'glcorearb.h'],
