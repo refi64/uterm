@@ -38,7 +38,9 @@ int main() {
   };
 
   auto resize = [&](int width, int height) {
-    disp.Resize(width, height);
+    if (auto err = disp.Resize(width, height)) {
+      err.Print();
+    }
   };
 
   resize(800, 600);

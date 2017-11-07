@@ -65,7 +65,7 @@ public:
 
   Pos cursor();
 
-  void Resize(int x, int y);
+  Error Resize(int x, int y);
   void WriteToScreen(string text);
   bool WriteKeysymToPty(uint32 keysym, int mods);
   bool WriteUnicodeToPty(uint32 code);

@@ -152,3 +152,16 @@ Error Pty::Signal(int signal) {
 
   return Error::New();
 }
+
+Error Pty::Resize(int x, int y) {
+  winsize ws;
+  ws.ws_xpixel = ws.ws_ypixel = 0;
+  ws.ws_row = y;
+  ws.ws_col = x;
+
+  if (ioctl(m_master, TIOCSWINSZ, &ws) == -1) {
+    return Error::Errno().Extend("resizing pty terminal");
+  } else {
+    return Error::New();
+  }
+}

@@ -17,7 +17,7 @@ public:
   void SetPrimaryFont(string name);
   void SetFallbackFont(string name);
 
-  void Resize(int width, int height);
+  Error Resize(int width, int height);
   bool Draw(SkCanvas *canvas);
 private:
   void TermDraw(const u32string& str, Pos pos, Attr attr, int width);

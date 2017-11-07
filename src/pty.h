@@ -11,6 +11,7 @@ public:
   Expect<string> NonblockingRead();
   Error Write(const string& data);
   Error Signal(int signal);
+  Error Resize(int x, int y);
 private:
   int m_master{-1};
   int m_pid{-1};

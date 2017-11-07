@@ -17,8 +17,13 @@ Pos Terminal::cursor() {
   return {tsm_screen_get_cursor_x(m_screen), tsm_screen_get_cursor_y(m_screen)};
 }
 
-void Terminal::Resize(int x, int y) {
+Error Terminal::Resize(int x, int y) {
   tsm_screen_resize(m_screen, x, y);
+  if (auto err = m_pty->Resize(x, y)) {
+    return err.Extend("resizing terminal");
+  } else {
+    return Error::New();
+  }
 }
 
 void Terminal::WriteToScreen(string text) {

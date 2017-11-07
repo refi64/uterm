@@ -23,7 +23,7 @@ void Display::SetFallbackFont(string name) {
   UpdateGlyphs();
 }
 
-void Display::Resize(int width, int height) {
+Error Display::Resize(int width, int height) {
   assert(m_char_width != -1);
 
   int rows = (height - (m_primary.GetHeight() - m_primary.GetHeight())) /
@@ -37,10 +37,16 @@ void Display::Resize(int width, int height) {
   m_primary.Resize(rows * cols);
   m_fallback.Resize(rows * cols);
 
-  m_term->Resize(cols, rows);
+  auto err = m_term->Resize(cols, rows);
 
   UpdatePositions();
   m_has_updated = true;
+
+  if (err) {
+    return err.Extend("while resizing display");
+  } else {
+    return Error::New();
+  }
 }
 
 bool Display::Draw(SkCanvas *canvas) {
