@@ -4,6 +4,9 @@
 #include <SkCanvas.h>
 #include <SkPaint.h>
 
+#include <array>
+#include <limits>
+
 #include "uterm.h"
 #include "terminal.h"
 
@@ -26,13 +29,16 @@ public:
   void DrawRange(SkCanvas *canvas, SkPoint *positions, Attr attrs, size_t begin,
                  size_t end);
 private:
+  static constexpr char kCharMax = std::numeric_limits<char>::max();
+  void UpdateForFontChange();
+
   SkPaint m_paint;
 
   sk_sp<SkTypeface> m_font;
   SkPaint::FontMetrics m_metrics;
 
   std::vector<SkGlyphID> m_glyphs;
-  SkGlyphID m_space_glyph;
+  std::array<SkGlyphID, kCharMax> m_glyph_cache;
 };
 
 // A TextManager is the bridge between a terminal's contents and a GlyphRenderer. It

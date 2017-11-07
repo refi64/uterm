@@ -14,27 +14,31 @@ void GlyphRenderer::Resize(int size) {
 
 void GlyphRenderer::SetTextSize(int height) {
   m_paint.setTextSize(SkIntToScalar(height));
-  m_paint.getFontMetrics(&m_metrics);
+  UpdateForFontChange();
 }
 
 void GlyphRenderer::SetFont(string name) {
   m_font = SkTypeface::MakeFromName(name.c_str(), SkFontStyle{});
   m_paint.setTypeface(m_font);
-
-  char32_t space = ' ';
-  m_paint.textToGlyphs(&space, sizeof(space), &m_space_glyph);
-
-  m_paint.getFontMetrics(&m_metrics);
+  UpdateForFontChange();
 }
 
 bool GlyphRenderer::UpdateGlyph(char32_t c, int index) {
+  if (c < kCharMax) {
+    auto glyph = m_glyph_cache[c];
+    if (glyph) {
+      m_glyphs[index] = glyph;
+      return true;
+    }
+  }
+
   m_paint.setTextEncoding(SkPaint::kUTF32_TextEncoding);
   m_paint.textToGlyphs(&c, sizeof(c), &m_glyphs[index]);
   return m_glyphs[index] != 0;
 }
 
 void GlyphRenderer::ClearGlyph(int index) {
-  m_glyphs[index] = m_space_glyph;
+  m_glyphs[index] = m_glyph_cache[' '];
 }
 
 int GlyphRenderer::GetHeight() {
@@ -62,6 +66,21 @@ void GlyphRenderer::DrawRange(SkCanvas *canvas, SkPoint *positions, Attr attrs,
   m_paint.setColor(attrs.foreground);
   canvas->drawPosText(m_glyphs.data() + begin, (end - begin) * sizeof(m_glyphs[0]),
                       positions + begin, m_paint);
+}
+
+void GlyphRenderer::UpdateForFontChange() {
+  m_paint.getFontMetrics(&m_metrics);
+  m_paint.setTextEncoding(SkPaint::kUTF8_TextEncoding);
+
+  for (char c = 0; c < kCharMax; c++) {
+    if (isprint(c)) {
+      SkGlyphID glyph;
+      m_paint.textToGlyphs(&c, sizeof(c), &glyph);
+      if (glyph) {
+        m_glyph_cache[c] = glyph;
+      }
+    }
+  }
 }
 
 TextManager::TextManager() {}
