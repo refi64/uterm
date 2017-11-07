@@ -48,7 +48,11 @@ int main() {
   w.set_resize_cb(resize);
 
   SkCanvas *canvas = w.canvas();
-  canvas->clear(SK_ColorWHITE);
+  canvas->clear(SK_ColorBLACK);
+
+  bool nextdraw = false;
+  int frame = 0;
+  int n = -1;
 
   while (w.isopen()) {
     SkCanvas *canvas = w.canvas();
@@ -67,8 +71,8 @@ int main() {
       continue;
     }
 
-    disp.Draw(canvas);
-    w.Draw();
+    bool b = disp.Draw(canvas);
+    w.Draw(b);
   }
 
   return 0;

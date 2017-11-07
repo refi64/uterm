@@ -95,7 +95,8 @@ def generate_gl3w(ctx):
                 stdout_quieter=1)
     ctx.db.add_external_dependencies_to_call(
         srcs=['deps/gl3w/gl3w_gen.py'],
-        dsts=[outdir / 'include' / 'gl3w.h', outdir / 'include' / 'glcorearb.h'],
+        dsts=[outdir / 'include' / 'GL' / 'gl3w.h',
+              outdir / 'include' / 'GL' / 'glcorearb.h'],
     )
     return outdir / 'include', outdir / 'src' / 'gl3w.c'
 
@@ -747,5 +748,5 @@ def build(ctx):
                       includes=gl3w.includes + skia.includes + fmt.includes,
                       libs=[abseil.base, abseil.strings, abseil.stacktrace, gl3w.lib,
                             skia.lib, fmt.lib],
-                      external_libs=['glfw', 'GL', 'tsm', 'X11', 'dl', 'pthread'],
+                      external_libs=['glfw', 'GL', 'tsm', 'X11', 'dl', 'pthread', 'profiler'],
                       lflags=['-fuse-ld=lld'])

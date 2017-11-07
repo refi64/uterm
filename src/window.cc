@@ -91,9 +91,23 @@ Error Window::Initialize(int width, int height) {
   }
 }
 
-void Window::Draw() {
+void Window::Draw(bool significant_redraw) {
+  SkPaint paint;
+  paint.setBlendMode(SkBlendMode::kSrc);
+
+  sk_sp<SkImage> image;
+  if (significant_redraw) {
+    image = m_surface->makeImageSnapshot();
+  }
+
   canvas()->flush();
   glfwSwapBuffers(m_window);
+
+  if (significant_redraw) {
+    canvas()->drawImage(image.get(), 0, 0, &paint);
+    canvas()->flush();
+    glfwSwapBuffers(m_window);
+  }
 
   glfwPollEvents();
 }

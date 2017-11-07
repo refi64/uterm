@@ -18,7 +18,7 @@ public:
   void SetFallbackFont(string name);
 
   void Resize(int width, int height);
-  void Draw(SkCanvas *canvas);
+  bool Draw(SkCanvas *canvas);
 private:
   void TermDraw(const u32string& str, Pos pos, Attr attr, int width);
   void UpdateWidth();
@@ -32,9 +32,10 @@ private:
 
   TextManager m_text;
   GlyphRenderer m_primary, m_fallback;
-  SkPaint m_highlight_paint;
   std::vector<bool> m_fallbacks;
 
   using AttrSet = MarkerSet<Attr, Attr::Hash>;
   AttrSet m_attrs;
+
+  bool m_has_updated{false};
 };

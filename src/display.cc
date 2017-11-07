@@ -3,9 +3,6 @@
 Display::Display(Terminal *term): m_term{term} {
   using namespace std::placeholders;
   m_term->set_draw_cb(std::bind(&Display::TermDraw, this, _1, _2, _3, _4));
-
-  /* m_highlight_paint.setAntiAlias(true); */
-  /* m_highlight_paint.setBlendMode(SkBlendMode::kDst); */
 }
 
 void Display::SetTextSize(int size) {
@@ -45,8 +42,9 @@ void Display::Resize(int width, int height) {
   UpdatePositions();
 }
 
-void Display::Draw(SkCanvas *canvas) {
+bool Display::Draw(SkCanvas *canvas) {
   Pos cursor = m_term->cursor();
+  bool significant_redraw = m_has_updated;
 
   std::vector<AttrSet::Span> dirty;
   AttrSet::Span *pspan = nullptr;
@@ -74,6 +72,9 @@ void Display::Draw(SkCanvas *canvas) {
   Attr cursor_cell_attr = m_attrs.At(cursor_offset);
   cursor_cell_attr.dirty = true;
   m_attrs.Update(cursor_offset, cursor_cell_attr);
+
+  m_has_updated = false;
+  return significant_redraw;
 }
 
 void Display::TermDraw(const u32string& str, Pos pos, Attr attr, int width) {
@@ -82,6 +83,8 @@ void Display::TermDraw(const u32string& str, Pos pos, Attr attr, int width) {
 
   attr.dirty = true;
   m_attrs.Update(m_text.PosToOffset(pos), attr);
+
+  m_has_updated = true;
 }
 
 void Display::UpdateWidth() {
@@ -116,7 +119,6 @@ void Display::UpdateGlyph(int x, int y) {
 
 void Display::HighlightRange(SkCanvas *canvas, Pos begin, Pos end, SkColor color) {
   assert(begin.y <= end.y);
-  /* m_highlight_paint.setColor(color); */
 
   for (int y = begin.y; y <= end.y; y++) {
     int first = y == begin.y ? begin.x : 0,
@@ -128,8 +130,7 @@ void Display::HighlightRange(SkCanvas *canvas, Pos begin, Pos end, SkColor color
                                    m_primary.GetHeight());
     canvas->save();
     canvas->clipRect(rect, false);
-    canvas->clear(color == SK_ColorBLACK ? SK_ColorRED : color);
+    canvas->clear(color);
     canvas->restore();
-    /* canvas->drawRect(rect, m_highlight_paint); */
   }
 }
