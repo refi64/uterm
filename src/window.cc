@@ -19,6 +19,8 @@ const int kGLMajor = 3, kGLMinor = 0, kSamples = 0, kStencilBits = 8;
 Window::Window() {}
 
 Window::~Window() {
+  glfwSetCursor(m_window, nullptr);
+  glfwDestroyCursor(m_cursor);
   glfwTerminate();
 }
 
@@ -60,6 +62,9 @@ Error Window::Initialize(int width, int height) {
   glfwSetCharCallback(m_window, StaticCharCallback);
   glfwSetWindowSizeCallback(m_window, StaticWinResizeCallback);
   glfwSetFramebufferSizeCallback(m_window, StaticFbResizeCallback);
+
+  m_cursor = glfwCreateStandardCursor(GLFW_IBEAM_CURSOR);
+  glfwSetCursor(m_window, m_cursor);
 
   if (gl3wInit())
     return Error::New("failed to initialize OpenGL");

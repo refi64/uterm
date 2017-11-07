@@ -44,6 +44,7 @@ private:
   static void StaticFbResizeCallback(GLFWwindow *glfw_window, int width, int height);
 
   GLFWwindow *m_window{nullptr};
+  GLFWcursor *m_cursor{nullptr};
   int m_fb_width, m_fb_height;
   int m_win_resize_width{-1}, m_win_resize_height{-1};
   GrGLFramebufferInfo m_info;
