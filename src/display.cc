@@ -40,6 +40,7 @@ void Display::Resize(int width, int height) {
   m_term->Resize(cols, rows);
 
   UpdatePositions();
+  m_has_updated = true;
 }
 
 bool Display::Draw(SkCanvas *canvas) {
