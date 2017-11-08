@@ -63,7 +63,11 @@ int GlyphRenderer::GetBaselineOffset() {
 void GlyphRenderer::DrawRange(SkCanvas *canvas, SkPoint *positions, Attr attrs,
                               size_t begin, size_t end) {
   m_paint.setTextEncoding(SkPaint::kGlyphID_TextEncoding);
-  m_paint.setColor(attrs.foreground);
+  if (attrs.flags & Attr::kInverse) {
+    m_paint.setColor(attrs.background);
+  } else {
+    m_paint.setColor(attrs.foreground);
+  }
   canvas->drawPosText(m_glyphs.data() + begin, (end - begin) * sizeof(m_glyphs[0]),
                       positions + begin, m_paint);
 }

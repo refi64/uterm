@@ -51,7 +51,6 @@ Error Display::Resize(int width, int height) {
 }
 
 bool Display::Draw(SkCanvas *canvas) {
-  Pos cursor = m_term->cursor();
   bool significant_redraw = m_has_updated;
 
   std::vector<AttrSet::Span> dirty;
@@ -60,8 +59,16 @@ bool Display::Draw(SkCanvas *canvas) {
     if (!pspan->data.dirty) continue;
 
     dirty.push_back(*pspan);
+
+    SkColor background;
+    if (pspan->data.flags & Attr::kInverse) {
+      background = pspan->data.foreground;
+    } else {
+      background = pspan->data.background;
+    }
+
     HighlightRange(canvas, m_text.OffsetToPos(pspan->begin),
-                   m_text.OffsetToPos(pspan->end), pspan->data.background);
+                   m_text.OffsetToPos(pspan->end), background);
   }
 
   for (auto &span : dirty) {
@@ -73,13 +80,13 @@ bool Display::Draw(SkCanvas *canvas) {
     m_attrs.Update(span.begin, span.end, attr);
   }
 
-  HighlightRange(canvas, cursor, {cursor.x+1, cursor.y}, SK_ColorWHITE);
-
-  // Mark the cell with the cursor as dirty, so it'll be redrawn next frame.
-  uint cursor_offset = m_text.PosToOffset(cursor);
-  Attr cursor_cell_attr = m_attrs.At(cursor_offset);
-  cursor_cell_attr.dirty = true;
-  m_attrs.Update(cursor_offset, cursor_cell_attr);
+  #ifdef UTERM_BLACK_SCREEN_WORKAROUND
+  // Workaround a nasty driver bug where the entire screen turns black if something
+  // being redrawn each frame.
+  Attr first_cell_attr = m_attrs.At(0);
+  first_cell_attr.dirty = true;
+  m_attrs.Update(0, first_cell_attr);
+  #endif
 
   m_has_updated = false;
   return significant_redraw;
