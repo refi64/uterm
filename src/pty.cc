@@ -146,7 +146,7 @@ Error Pty::Signal(int signal) {
     return Error::New("cannot Signal Pty without process");
   }
 
-  if (kill(m_pid, signal) == -1) {
+  if (killpg(m_pid, signal) == -1) {
     return Error::Errno().Extend("signaling Pty process");
   }
 
