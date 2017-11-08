@@ -1,18 +1,11 @@
 #include "window.h"
 #include "terminal.h"
+#include "keys.h"
 
 #include <gl/GrGLInterface.h>
 #include <gl/GrGLUtil.h>
 
 #include <absl/memory/memory.h>
-
-// Grrrr...
-#define Window XWindow
-#include <X11/XKBlib.h>
-#undef Window
-
-#define GLFW_EXPOSE_NATIVE_X11
-#include <GLFW/glfw3native.h>
 
 const int kGLMajor = 3, kGLMinor = 0, kSamples = 0, kStencilBits = 8;
 
@@ -148,8 +141,7 @@ void Window::StaticKeyCallback(GLFWwindow *glfw_window, int key, int scancode,
   if (glfw_mods & GLFW_MOD_ALT) mods |= KeyboardModifier::kAlt;
   if (glfw_mods & GLFW_MOD_SUPER) mods |= KeyboardModifier::kSuper;
 
-  uint32 keysym = XkbKeycodeToKeysym(glfwGetX11Display(), scancode, 0,
-                                     mods & KeyboardModifier::kShift ? 1 : 0);
+  uint32 keysym = GlfwKeyToXkbKeysym(key);
   window->m_key_cb(keysym, mods);
 }
 
