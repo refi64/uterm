@@ -12,7 +12,13 @@ int main() {
     return 1;
   }
 
-  Terminal term;
+  Attr attr;
+  attr.foreground = SK_ColorWHITE;
+  attr.background = SK_ColorBLACK;
+  attr.flags = 0;
+  attr.dirty = false;
+
+  Terminal term{attr};
   term.set_pty(&pty);
 
   Display disp{&term};

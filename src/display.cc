@@ -1,6 +1,6 @@
 #include "display.h"
 
-Display::Display(Terminal *term): m_term{term} {
+Display::Display(Terminal *term): m_term{term}, m_attrs{m_term->default_attr()} {
   using namespace std::placeholders;
   m_term->set_draw_cb(std::bind(&Display::TermDraw, this, _1, _2, _3, _4));
 }
@@ -36,6 +36,7 @@ Error Display::Resize(int width, int height) {
 
   m_primary.Resize(rows * cols);
   m_fallback.Resize(rows * cols);
+  m_attrs.Resize(rows * cols);
 
   auto err = m_term->Resize(cols, rows);
 

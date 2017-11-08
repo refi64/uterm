@@ -7,6 +7,8 @@
 template <typename Data, typename Hash = std::hash<Data>>
 class MarkerSet {
 public:
+  MarkerSet(const Data &default_data);
+
   struct Span {
     size_t begin, end;
     const Data &data;
@@ -15,7 +17,7 @@ public:
   const Data & At(size_t index);
   void Update(size_t begin, size_t end, Data data);
   void Update(size_t index, Data data);
-  void Shrink(size_t sz);
+  void Resize(size_t sz);
 
   Span * NextSpan(Span *prev);
 private:
@@ -35,9 +37,16 @@ private:
 
   void SetMarker(int index, Marker *m);
 
+  Marker m_default;
   std::unordered_set<Marker, MarkerHash> m_markers;
   std::vector<Marker*> m_indexes;
+  ;
 };
+
+template <typename Data, typename Hash>
+MarkerSet<Data, Hash>::MarkerSet(const Data &default_data): m_default{default_data} {
+  m_default.refc = 1;
+}
 
 template <typename Data, typename Hash>
 const Data & MarkerSet<Data, Hash>::At(size_t index) {
@@ -46,36 +55,37 @@ const Data & MarkerSet<Data, Hash>::At(size_t index) {
 
 template <typename Data, typename Hash>
 void MarkerSet<Data, Hash>::Update(size_t begin, size_t end, Data data) {
-  assert(begin >= 0 && end <= m_indexes.size());
+  assert(end <= m_indexes.size());
 
   auto it = m_markers.emplace(data).first;
   // XXX: we don't modify Marker's data, so it's hash should stay intact.
   auto m = const_cast<Marker*>(&*it);
 
   for (size_t i = begin; i < end; i++) {
-    m->refc++;
     SetMarker(i, m);
   }
 }
 
 template <typename Data, typename Hash>
 void MarkerSet<Data, Hash>::Update(size_t index, Data data) {
-  if (index >= m_indexes.size()) {
-    assert(m_indexes.size() == index);
-    m_indexes.resize(index + 1, nullptr);
-  }
-
   Update(index, index + 1, data);
 }
 
 template <typename Data, typename Hash>
-void MarkerSet<Data, Hash>::Shrink(size_t sz) {
+void MarkerSet<Data, Hash>::Resize(size_t sz) {
   if (m_indexes.size() > sz) {
     for (int i = sz; i < m_indexes.size(); i++) {
       SetMarker(i, nullptr);
     }
 
     m_indexes.resize(sz);
+  } else if (m_indexes.size() < sz) {
+    size_t first_sz = m_indexes.size();
+    m_indexes.resize(sz, nullptr);
+
+    for (int i = first_sz; i < sz; i++) {
+      SetMarker(i, &m_default);
+    }
   }
 }
 
@@ -90,6 +100,7 @@ typename MarkerSet<Data, Hash>::Span * MarkerSet<Data, Hash>::NextSpan(
   }
 
   size_t end = begin+1;
+  assert(m_indexes[begin]);
   Data *data = &m_indexes[begin]->data;
   while (end < m_indexes.size() && m_indexes[end] == m_indexes[begin]) {
     end++;
@@ -101,9 +112,17 @@ typename MarkerSet<Data, Hash>::Span * MarkerSet<Data, Hash>::NextSpan(
 template <typename Data, typename Hash>
 void MarkerSet<Data, Hash>::SetMarker(int index, Marker *m) {
   auto old_marker = m_indexes[index];
+  if (old_marker == m) {
+    return;
+  }
+
   m_indexes[index] = m;
+  if (m != nullptr) {
+    m->refc++;
+  }
 
   if (old_marker != nullptr && --old_marker->refc == 0) {
+    assert(old_marker != &m_default);
     m_markers.erase(*old_marker);
   }
 }

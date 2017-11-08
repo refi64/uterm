@@ -56,7 +56,7 @@ struct Attr {
 
 class Terminal {
 public:
-  Terminal();
+  Terminal(Attr defaults);
 
   using DrawCb = std::function<void(const u32string&, Pos, Attr, int)>;
 
@@ -65,6 +65,7 @@ public:
 
   Pos cursor();
 
+  const Attr & default_attr() { return m_default_attr; }
   Error Resize(int x, int y);
   void WriteToScreen(string text);
   bool WriteKeysymToPty(uint32 keysym, int mods);
@@ -73,7 +74,7 @@ public:
 private:
   static void StaticWrite(tsm_vte *vte, const char *u8, size_t len, void *data);
   static int StaticDraw(tsm_screen *screen, uint32 id, const uint32 *chars, size_t len,
-                        uint width, uint posx, uint posy, const tsm_screen_attr *attr,
+                        uint width, uint posx, uint posy, const tsm_screen_attr *tattr,
                         tsm_age_t age, void *data);
 
   DrawCb m_draw_cb;
@@ -82,5 +83,6 @@ private:
   tsm_vte *m_vte;
 
   int m_age{0};
+  Attr m_default_attr;
   Pty *m_pty;
 };

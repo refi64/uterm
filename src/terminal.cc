@@ -5,9 +5,25 @@
 
 #include <xkbcommon/xkbcommon-keysyms.h>
 
-Terminal::Terminal() {
+Terminal::Terminal(Attr defaults): m_default_attr{defaults} {
   tsm_screen_new(&m_screen, nullptr, nullptr);
   tsm_vte_new(&m_vte, m_screen, StaticWrite, static_cast<void*>(this), nullptr, nullptr);
+
+  assert(!m_default_attr.flags && !m_default_attr.dirty);
+
+  tsm_screen_attr tattr;
+  tattr.fccode = tattr.bccode = -1;
+
+  tattr.fr = SkColorGetR(m_default_attr.foreground);
+  tattr.fg = SkColorGetG(m_default_attr.foreground);
+  tattr.fb = SkColorGetB(m_default_attr.foreground);
+
+  tattr.br = SkColorGetR(m_default_attr.background);
+  tattr.bg = SkColorGetG(m_default_attr.background);
+  tattr.bb = SkColorGetB(m_default_attr.background);
+
+  tattr.bold = tattr.underline = tattr.inverse = tattr.protect = tattr.blink = 0;
+  tsm_screen_set_def_attr(m_screen, &tattr);
 }
 
 void Terminal::set_draw_cb(DrawCb draw_cb) { m_draw_cb = draw_cb; }
@@ -19,6 +35,7 @@ Pos Terminal::cursor() {
 
 Error Terminal::Resize(int x, int y) {
   tsm_screen_resize(m_screen, x, y);
+  Draw();
   if (auto err = m_pty->Resize(x, y)) {
     return err.Extend("resizing terminal");
   } else {
@@ -54,7 +71,7 @@ void Terminal::StaticWrite(tsm_vte *vte, const char *u8, size_t len, void *data)
 }
 
 int Terminal::StaticDraw(tsm_screen *screen, uint32 id, const uint32 *chars, size_t len,
-                         uint width, uint posx, uint posy, const tsm_screen_attr *attr,
+                         uint width, uint posx, uint posy, const tsm_screen_attr *tattr,
                          tsm_age_t age, void *data) {
   Terminal *term = static_cast<Terminal*>(data);
 
@@ -67,23 +84,23 @@ int Terminal::StaticDraw(tsm_screen *screen, uint32 id, const uint32 *chars, siz
 
   Pos pos{posx, posy};
 
-  Attr nattr;
-  nattr.foreground = SkColorSetRGB(attr->fr, attr->fg, attr->fb);
-  nattr.background = SkColorSetRGB(attr->br, attr->bg, attr->bb);
-  nattr.flags = 0;
-  if (attr->bold) {
-    nattr.flags |= Attr::kBold;
+  Attr attr;
+  attr.foreground = SkColorSetRGB(tattr->fr, tattr->fg, tattr->fb);
+  attr.background = SkColorSetRGB(tattr->br, tattr->bg, tattr->bb);
+  attr.flags = 0;
+  if (tattr->bold) {
+    attr.flags |= Attr::kBold;
   }
-  if (attr->underline) {
-    nattr.flags |= Attr::kUnderline;
+  if (tattr->underline) {
+    attr.flags |= Attr::kUnderline;
   }
-  if (attr->inverse) {
-    nattr.flags |= Attr::kInverse;
+  if (tattr->inverse) {
+    attr.flags |= Attr::kInverse;
   }
-  if (attr->protect) {
-    nattr.flags |= Attr::kProtect;
+  if (tattr->protect) {
+    attr.flags |= Attr::kProtect;
   }
 
-  term->m_draw_cb(utf32, pos, nattr, width);
+  term->m_draw_cb(utf32, pos, attr, width);
   return 0;
 }
