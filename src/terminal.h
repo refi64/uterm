@@ -28,8 +28,8 @@ struct Attr {
                        kUnderline = 1<<2,
                        kInverse = 1<<3,
                        kProtect = 1<<4;
-  int flags;
-  bool dirty;
+  int flags{0};
+  bool dirty{false}, selected{false};
 
   bool operator==(const Attr &rhs) const {
     return foreground == rhs.foreground && background == rhs.background &&
@@ -49,21 +49,33 @@ struct Attr {
       combine(&hash, attr.background);
       combine(&hash, attr.flags);
       combine(&hash, attr.dirty);
+      combine(&hash, attr.selected);
       return hash;
     }
   };
 };
+
+struct SelectionRange { int begin_x, begin_y, end_x, end_y; };
 
 class Terminal {
 public:
   Terminal(Attr defaults);
 
   using DrawCb = std::function<void(const u32string&, Pos, Attr, int)>;
+  using CopyCb = std::function<void(const string&)>;
+  using PasteCb = std::function<string()>;
 
   void set_draw_cb(DrawCb draw_cb);
+  void set_copy_cb(CopyCb copy_cb);
+  void set_paste_cb(PasteCb paste_cb);
   void set_pty(Pty* pty);
 
   Pos cursor();
+
+  void SetSelection(Selection state, int x, int y);
+  void EndSelection();
+  void ResetSelection();
+  const SelectionRange & selection() { return m_selection_range; }
 
   const Attr & default_attr() { return m_default_attr; }
   Error Resize(int x, int y);
@@ -78,10 +90,14 @@ private:
                         tsm_age_t age, void *data);
 
   DrawCb m_draw_cb;
+  CopyCb m_copy_cb;
+  PasteCb m_paste_cb;
 
   tsm_screen *m_screen;
   tsm_vte *m_vte;
 
+  SelectionRange m_selection_range;
+  string m_selection_contents;
   int m_age{0};
   Attr m_default_attr;
   Pty *m_pty;

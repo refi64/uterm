@@ -18,8 +18,19 @@ int main() {
   attr.flags = 0;
   attr.dirty = false;
 
+  auto copy = [&](const string& str) {
+    fmt::print("copy {}\n", str);
+  };
+
+  auto paste = [&]() -> string {
+    fmt::print("paste\n");
+    return "paste";
+  };
+
   Terminal term{attr};
   term.set_pty(&pty);
+  term.set_copy_cb(copy);
+  term.set_paste_cb(paste);
 
   Display disp{&term};
 
@@ -49,18 +60,20 @@ int main() {
     }
   };
 
+  auto selection = [&](Selection state, double mx, double my) {
+    if (state == Selection::kEnd) disp.EndSelection();
+    else disp.SetSelection(state, mx, my);
+  };
+
   resize(800, 600);
 
   w.set_key_cb(key);
   w.set_char_cb(char_);
   w.set_resize_cb(resize);
+  w.set_selection_cb(selection);
 
   SkCanvas *canvas = w.canvas();
   canvas->clear(SK_ColorBLACK);
-
-  bool nextdraw = false;
-  int frame = 0;
-  int n = -1;
 
   while (w.isopen()) {
     SkCanvas *canvas = w.canvas();
@@ -79,8 +92,7 @@ int main() {
       continue;
     }
 
-    bool b = disp.Draw(canvas);
-    w.Draw(b);
+    w.DrawAndPoll(disp.Draw(canvas));
   }
 
   return 0;

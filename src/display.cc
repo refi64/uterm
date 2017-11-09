@@ -1,5 +1,11 @@
 #include "display.h"
 
+// Clamps v to the range low (inclusive) to high (exclusive).
+template <typename T>
+T clamp(T v, T low, T high) {
+  return v < low ? low : (v > high ? high : v);
+}
+
 Display::Display(Terminal *term): m_term{term}, m_attrs{m_term->default_attr()} {
   using namespace std::placeholders;
   m_term->set_draw_cb(std::bind(&Display::TermDraw, this, _1, _2, _3, _4));
@@ -21,6 +27,43 @@ void Display::SetPrimaryFont(string name) {
 void Display::SetFallbackFont(string name) {
   m_fallback.SetFont(name);
   UpdateGlyphs();
+}
+
+void Display::SetSelection(Selection state, int mx, int my) {
+  int x = clamp(mx / m_char_width, 0, m_text.cols() - 1);
+  int y = clamp(my / m_primary.GetHeight(), 0, m_text.rows() - 1);
+
+  // Reset the old selection...
+  auto old_sel = m_term->selection();
+  uint old_sel_begin = m_text.PosToOffset(old_sel.begin_x, old_sel.begin_y),
+       old_sel_end = m_text.PosToOffset(old_sel.end_x, old_sel.end_y);
+
+  for (int i = old_sel_begin; i < old_sel_end; i++) {
+    Attr attr = m_attrs.At(i);
+    attr.dirty = true;
+    attr.selected = false;
+    m_attrs.Update(i, attr);
+  }
+
+  m_term->SetSelection(state, x, y);
+
+  // ...and mark the new one.
+  auto new_sel = m_term->selection();
+  uint new_sel_begin = m_text.PosToOffset(new_sel.begin_x, new_sel.begin_y),
+       new_sel_end = m_text.PosToOffset(new_sel.end_x, new_sel.end_y);
+
+  for (int i = new_sel_begin; i < new_sel_end; i++) {
+    Attr attr = m_attrs.At(i);
+    attr.dirty = true;
+    attr.selected = true;
+    m_attrs.Update(i, attr);
+  }
+
+  m_has_updated = true;
+}
+
+void Display::EndSelection() {
+  m_term->EndSelection();
 }
 
 Error Display::Resize(int width, int height) {
@@ -52,15 +95,16 @@ Error Display::Resize(int width, int height) {
 bool Display::Draw(SkCanvas *canvas) {
   bool significant_redraw = m_has_updated;
 
-  std::vector<AttrSet::Span> dirty;
+  std::vector<std::pair<AttrSet::Span, bool>> dirty;
   AttrSet::Span *pspan = nullptr;
   while ((pspan = m_attrs.NextSpan(pspan))) {
     if (!pspan->data.dirty) continue;
 
-    dirty.push_back(*pspan);
+    bool inverse = (pspan->data.flags ^ (pspan->data.selected ? Attr::kInverse : 0)) &
+                   Attr::kInverse;
 
     SkColor background;
-    if (pspan->data.flags & Attr::kInverse) {
+    if (inverse) {
       background = pspan->data.foreground;
     } else {
       background = pspan->data.background;
@@ -68,11 +112,18 @@ bool Display::Draw(SkCanvas *canvas) {
 
     HighlightRange(canvas, m_text.OffsetToPos(pspan->begin),
                    m_text.OffsetToPos(pspan->end), background);
+
+    dirty.emplace_back(*pspan, inverse);
   }
 
-  for (auto &span : dirty) {
-    m_text.DrawRangeWithRenderer(canvas, &m_primary, span.data, span.begin, span.end);
-    m_text.DrawRangeWithRenderer(canvas, &m_fallback,  span.data, span.begin, span.end);
+  for (auto &sect : dirty) {
+    auto &span = sect.first;
+    bool inverse = sect.second;
+
+    m_text.DrawRangeWithRenderer(canvas, &m_primary, span.data, span.begin, span.end,
+                                 inverse);
+    m_text.DrawRangeWithRenderer(canvas, &m_fallback,  span.data, span.begin, span.end,
+                                 inverse);
 
     Attr attr = span.data;
     attr.dirty = false;
@@ -81,7 +132,7 @@ bool Display::Draw(SkCanvas *canvas) {
 
   #ifdef UTERM_BLACK_SCREEN_WORKAROUND
   // Workaround a nasty driver bug where the entire screen turns black if something
-  // being redrawn each frame.
+  // isn't being redrawn each frame.
   Attr first_cell_attr = m_attrs.At(0);
   first_cell_attr.dirty = true;
   m_attrs.Update(0, first_cell_attr);

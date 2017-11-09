@@ -24,13 +24,66 @@ Terminal::Terminal(Attr defaults): m_default_attr{defaults} {
 
   tattr.bold = tattr.underline = tattr.inverse = tattr.protect = tattr.blink = 0;
   tsm_screen_set_def_attr(m_screen, &tattr);
+
+  ResetSelection();
 }
 
 void Terminal::set_draw_cb(DrawCb draw_cb) { m_draw_cb = draw_cb; }
+void Terminal::set_copy_cb(CopyCb copy_cb) { m_copy_cb = copy_cb; }
+void Terminal::set_paste_cb(PasteCb paste_cb) { m_paste_cb = paste_cb; }
 void Terminal::set_pty(Pty *pty) { m_pty = pty; }
 
 Pos Terminal::cursor() {
   return {tsm_screen_get_cursor_x(m_screen), tsm_screen_get_cursor_y(m_screen)};
+}
+
+void Terminal::SetSelection(Selection state, int x, int y) {
+  switch (state) {
+  case Selection::kBegin:
+    ResetSelection();
+    tsm_screen_selection_start(m_screen, x, y);
+    m_selection_range.begin_x = m_selection_range.end_x = x;
+    m_selection_range.begin_y = m_selection_range.end_y = y;
+    break;
+  case Selection::kUpdate:
+    tsm_screen_selection_target(m_screen, x, y);
+
+    if (y < m_selection_range.begin_y ||
+        (y == m_selection_range.begin_y && x < m_selection_range.begin_x)) {
+      // Moving backwards: update the beginning offsets.
+      m_selection_range.end_x = std::max(m_selection_range.begin_x,
+                                         m_selection_range.end_x);
+      m_selection_range.end_y = std::max(m_selection_range.begin_y,
+                                         m_selection_range.end_y);
+      m_selection_range.begin_x = x;
+      m_selection_range.begin_y = y;
+    } else {
+      m_selection_range.end_x = x;
+      m_selection_range.end_y = y;
+    }
+    break;
+  case Selection::kEnd:
+    assert(false);
+  }
+}
+
+void Terminal::EndSelection() {
+  if (m_selection_range.begin_x == m_selection_range.end_x &&
+      m_selection_range.begin_y == m_selection_range.end_y) {
+    ResetSelection();
+  } else {
+    char *buf = nullptr;
+    uint sz = tsm_screen_selection_copy(m_screen, &buf);
+    m_selection_contents = string(buf, sz);
+    free(buf);
+  }
+}
+
+void Terminal::ResetSelection() {
+  tsm_screen_selection_reset(m_screen);
+  m_selection_range.begin_x = m_selection_range.begin_y = m_selection_range.end_x =
+                              m_selection_range.end_y = 0;
+  m_selection_contents = "";
 }
 
 Error Terminal::Resize(int x, int y) {
@@ -48,7 +101,21 @@ void Terminal::WriteToScreen(string text) {
 }
 
 bool Terminal::WriteKeysymToPty(uint32 keysym, int mods) {
-  return tsm_vte_handle_keyboard(m_vte, keysym, keysym, mods, TSM_VTE_INVALID);
+  if (keysym == XKB_KEY_C && mods & KeyboardModifier::kControl &&
+      !m_selection_contents.empty()) {
+    m_copy_cb(m_selection_contents);
+    return true;
+  } else if (keysym == XKB_KEY_V && mods & KeyboardModifier::kControl) {
+    auto str = m_paste_cb();
+    for (auto c : str) {
+      // XXX: This disregards unicode.
+      WriteUnicodeToPty(c);
+    }
+    Draw();
+    return true;
+  } else {
+    return tsm_vte_handle_keyboard(m_vte, keysym, keysym, mods, TSM_VTE_INVALID);
+  }
 }
 
 bool Terminal::WriteUnicodeToPty(uint32 code) {

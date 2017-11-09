@@ -20,6 +20,7 @@ Window::~Window() {
 void Window::set_key_cb(KeyCb key_cb) { m_key_cb = key_cb; }
 void Window::set_char_cb(CharCb char_cb) { m_char_cb = char_cb; }
 void Window::set_resize_cb(ResizeCb resize_cb) { m_resize_cb = resize_cb; }
+void Window::set_selection_cb(SelectionCb selection_cb) { m_selection_cb = selection_cb; }
 
 bool Window::isopen() {
   assert(m_window);
@@ -55,6 +56,7 @@ Error Window::Initialize(int width, int height) {
   glfwSetCharCallback(m_window, StaticCharCallback);
   glfwSetWindowSizeCallback(m_window, StaticWinResizeCallback);
   glfwSetFramebufferSizeCallback(m_window, StaticFbResizeCallback);
+  glfwSetMouseButtonCallback(m_window, StaticMouseCallback);
 
   m_cursor = glfwCreateStandardCursor(GLFW_IBEAM_CURSOR);
   glfwSetCursor(m_window, m_cursor);
@@ -89,7 +91,7 @@ Error Window::Initialize(int width, int height) {
   }
 }
 
-void Window::Draw(bool significant_redraw) {
+void Window::DrawAndPoll(bool significant_redraw) {
   SkPaint paint;
   paint.setBlendMode(SkBlendMode::kSrc);
 
@@ -107,7 +109,21 @@ void Window::Draw(bool significant_redraw) {
     glfwSwapBuffers(m_window);
   }
 
+  bool previous_selection_status = m_selection_active;
   glfwPollEvents();
+
+  double mx, my;
+  glfwGetCursorPos(m_window, &mx, &my);
+
+  if (m_selection_active) {
+    if (previous_selection_status) {
+      m_selection_cb(Selection::kUpdate, mx, my);
+    } else {
+      m_selection_cb(Selection::kBegin, mx, my);
+    }
+  } else if (previous_selection_status) {
+    m_selection_cb(Selection::kEnd, mx, my);
+  }
 }
 
 Error Window::CreateSurface() {
@@ -164,5 +180,17 @@ void Window::StaticFbResizeCallback(GLFWwindow *glfw_window, int width, int heig
 
   if (auto err = window->CreateSurface()) {
     err.Extend("in StaticResizeCallback").Print();
+  }
+}
+
+void Window::StaticMouseCallback(GLFWwindow *glfw_window, int button, int action,
+                                 int mods) {
+  if (button != GLFW_MOUSE_BUTTON_LEFT) return;
+  Window *window = static_cast<Window*>(glfwGetWindowUserPointer(glfw_window));
+
+  if (action == GLFW_PRESS) {
+    window->m_selection_active = true;
+  } else if (action == GLFW_RELEASE) {
+    window->m_selection_active = false;
   }
 }

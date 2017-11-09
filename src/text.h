@@ -27,7 +27,7 @@ public:
   int GetBaselineOffset();
 
   void DrawRange(SkCanvas *canvas, SkPoint *positions, Attr attrs, size_t begin,
-                 size_t end);
+                 size_t end, bool inverse);
 private:
   static constexpr char kCharMax = std::numeric_limits<char>::max();
   void UpdateForFontChange();
@@ -61,7 +61,7 @@ public:
   Pos OffsetToPos(uint offset) { return {offset % m_cols, offset / m_cols}; }
 
   void DrawRangeWithRenderer(SkCanvas *canvas, GlyphRenderer *renderer, Attr attrs,
-                             size_t begin, size_t end);
+                             size_t begin, size_t end, bool inverse);
 private:
   uint m_cols{0}, m_rows{0};
   std::u32string m_text;

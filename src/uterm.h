@@ -8,3 +8,5 @@ using std::string;
 using std::u32string;
 using uint = unsigned int;
 using uint32 = uint32_t;
+
+enum class Selection { kBegin, kUpdate, kEnd };

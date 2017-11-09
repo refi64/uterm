@@ -17,6 +17,9 @@ public:
   void SetPrimaryFont(string name);
   void SetFallbackFont(string name);
 
+  void SetSelection(Selection state, int mx, int my);
+  void EndSelection();
+
   Error Resize(int width, int height);
   bool Draw(SkCanvas *canvas);
 private:
