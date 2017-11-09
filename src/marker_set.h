@@ -15,8 +15,15 @@ public:
   };
 
   const Data & At(size_t index);
-  void Update(size_t begin, size_t end, Data data);
+
+  void Update(size_t begin, size_t end, const Data &data);
   void Update(size_t index, Data data);
+
+  template <typename F>
+  void UpdateWith(size_t begin, size_t end, F func);
+  template <typename F>
+  void UpdateWith(size_t index, F func);
+
   void Resize(size_t sz);
 
   Span * NextSpan(Span *prev);
@@ -54,7 +61,7 @@ const Data & MarkerSet<Data, Hash>::At(size_t index) {
 }
 
 template <typename Data, typename Hash>
-void MarkerSet<Data, Hash>::Update(size_t begin, size_t end, Data data) {
+void MarkerSet<Data, Hash>::Update(size_t begin, size_t end, const Data& data) {
   assert(end <= m_indexes.size());
 
   auto it = m_markers.emplace(data).first;
@@ -69,6 +76,24 @@ void MarkerSet<Data, Hash>::Update(size_t begin, size_t end, Data data) {
 template <typename Data, typename Hash>
 void MarkerSet<Data, Hash>::Update(size_t index, Data data) {
   Update(index, index + 1, data);
+}
+
+template <typename Data, typename Hash>
+template <typename F>
+void MarkerSet<Data, Hash>::UpdateWith(size_t begin, size_t end, F func) {
+  assert(end <= m_indexes.size());
+
+  for (size_t index = begin; index < end; index++) {
+    Data data = m_indexes[index]->data;
+    func(data);
+    Update(index, data);
+  }
+}
+
+template <typename Data, typename Hash>
+template <typename F>
+void MarkerSet<Data, Hash>::UpdateWith(size_t index, F func) {
+  UpdateWith(index, index + 1, func);
 }
 
 template <typename Data, typename Hash>

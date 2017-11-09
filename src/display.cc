@@ -38,12 +38,10 @@ void Display::SetSelection(Selection state, int mx, int my) {
   uint old_sel_begin = m_text.PosToOffset(old_sel.begin_x, old_sel.begin_y),
        old_sel_end = m_text.PosToOffset(old_sel.end_x, old_sel.end_y);
 
-  for (int i = old_sel_begin; i < old_sel_end; i++) {
-    Attr attr = m_attrs.At(i);
+  m_attrs.UpdateWith(old_sel_begin, old_sel_end, [](Attr &attr) {
     attr.dirty = true;
     attr.selected = false;
-    m_attrs.Update(i, attr);
-  }
+  });
 
   m_term->SetSelection(state, x, y);
 
@@ -52,12 +50,10 @@ void Display::SetSelection(Selection state, int mx, int my) {
   uint new_sel_begin = m_text.PosToOffset(new_sel.begin_x, new_sel.begin_y),
        new_sel_end = m_text.PosToOffset(new_sel.end_x, new_sel.end_y);
 
-  for (int i = new_sel_begin; i < new_sel_end; i++) {
-    Attr attr = m_attrs.At(i);
+  m_attrs.UpdateWith(new_sel_begin, new_sel_end, [](Attr &attr) {
     attr.dirty = true;
     attr.selected = true;
-    m_attrs.Update(i, attr);
-  }
+  });
 
   m_has_updated = true;
 }
@@ -125,17 +121,17 @@ bool Display::Draw(SkCanvas *canvas) {
     m_text.DrawRangeWithRenderer(canvas, &m_fallback,  span.data, span.begin, span.end,
                                  inverse);
 
-    Attr attr = span.data;
-    attr.dirty = false;
-    m_attrs.Update(span.begin, span.end, attr);
+    m_attrs.UpdateWith(span.begin, span.end, [](Attr &attr) {
+      attr.dirty = false;
+    });
   }
 
   #ifdef UTERM_BLACK_SCREEN_WORKAROUND
   // Workaround a nasty driver bug where the entire screen turns black if something
   // isn't being redrawn each frame.
-  Attr first_cell_attr = m_attrs.At(0);
-  first_cell_attr.dirty = true;
-  m_attrs.Update(0, first_cell_attr);
+  m_attrs.UpdateWith(0, [](Attr &attr) {
+    attr.dirty = true;
+  });
   #endif
 
   m_has_updated = false;
