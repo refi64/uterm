@@ -26,8 +26,7 @@ void Display::SetFallbackFont(string name) {
 Error Display::Resize(int width, int height) {
   assert(m_char_width != -1);
 
-  int rows = (height - (m_primary.GetHeight() - m_primary.GetHeight())) /
-             m_primary.GetHeight();
+  int rows = height / m_primary.GetHeight();
   int cols = width / m_char_width;
 
   m_fallbacks.resize(rows * cols);
