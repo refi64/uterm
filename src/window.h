@@ -31,6 +31,8 @@ public:
   Error Initialize(int width, int height);
   bool isopen();
   SkCanvas * canvas() { return m_surface->getCanvas(); }
+  string ClipboardRead();
+  void ClipboardWrite(const string &str);
   void DrawAndPoll(bool significant_redraw);
 private:
   KeyCb m_key_cb;

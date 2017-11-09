@@ -745,7 +745,8 @@ def build(ctx):
     fmt = build_fmtlib(ctx, rec.cxx)
 
     rec.cxx.build_exe('uterm', Path.glob('src/*.cc'),
-                      includes=gl3w.includes + skia.includes + fmt.includes,
+                      includes=gl3w.includes + skia.includes + fmt.includes + \
+                               ['deps/utfcpp/source'],
                       libs=[abseil.base, abseil.strings, abseil.stacktrace, gl3w.lib,
                             skia.lib, fmt.lib],
                       macros=['UTERM_BLACK_SCREEN_WORKAROUND'],

@@ -12,20 +12,25 @@ int main() {
     return 1;
   }
 
+  Window w;
+  if (auto err = w.Initialize(800, 600)) {
+    err.Extend("while initializing window").Print();
+    return 1;
+  }
+
+  auto copy = [&](const string& str) {
+    w.ClipboardWrite(str);
+  };
+
+  auto paste = [&]() -> string {
+    return w.ClipboardRead();
+  };
+
   Attr attr;
   attr.foreground = SK_ColorWHITE;
   attr.background = SK_ColorBLACK;
   attr.flags = 0;
   attr.dirty = false;
-
-  auto copy = [&](const string& str) {
-    fmt::print("copy {}\n", str);
-  };
-
-  auto paste = [&]() -> string {
-    fmt::print("paste\n");
-    return "paste";
-  };
 
   Terminal term{attr};
   term.set_pty(&pty);
@@ -33,12 +38,6 @@ int main() {
   term.set_paste_cb(paste);
 
   Display disp{&term};
-
-  Window w;
-  if (auto err = w.Initialize(800, 600)) {
-    err.Extend("while initializing window").Print();
-    return 1;
-  }
 
   disp.SetPrimaryFont("Roboto Mono");
   disp.SetFallbackFont("Noto Sans");

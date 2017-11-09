@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include <xkbcommon/xkbcommon-keysyms.h>
+#include <utf8.h>
 
 Terminal::Terminal(Attr defaults): m_default_attr{defaults} {
   tsm_screen_new(&m_screen, nullptr, nullptr);
@@ -103,15 +104,20 @@ void Terminal::WriteToScreen(string text) {
 bool Terminal::WriteKeysymToPty(uint32 keysym, int mods) {
   if (keysym == XKB_KEY_C && mods & KeyboardModifier::kControl &&
       !m_selection_contents.empty()) {
+    // Copy.
     m_copy_cb(m_selection_contents);
     return true;
   } else if (keysym == XKB_KEY_V && mods & KeyboardModifier::kControl) {
-    auto str = m_paste_cb();
-    for (auto c : str) {
-      // XXX: This disregards unicode.
+    // Paste.
+    auto u8 = m_paste_cb();
+    u32string u32;
+    utf8::utf8to32(u8.begin(), u8.end(), std::back_inserter(u32));
+
+    for (auto c : u32) {
       WriteUnicodeToPty(c);
     }
     Draw();
+
     return true;
   } else {
     return tsm_vte_handle_keyboard(m_vte, keysym, keysym, mods, TSM_VTE_INVALID);

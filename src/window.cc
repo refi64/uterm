@@ -91,6 +91,15 @@ Error Window::Initialize(int width, int height) {
   }
 }
 
+string Window::ClipboardRead() {
+  const char *clip = glfwGetClipboardString(m_window);
+  return clip != nullptr ? clip : "";
+}
+
+void Window::ClipboardWrite(const string &str) {
+  glfwSetClipboardString(m_window, str.c_str());
+}
+
 void Window::DrawAndPoll(bool significant_redraw) {
   SkPaint paint;
   paint.setBlendMode(SkBlendMode::kSrc);
