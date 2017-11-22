@@ -13,9 +13,9 @@ public:
   Error(const string& error, int skip=1);
   ~Error()=default;
 
-  static Error New() { return std::move(Error{}); }
+  static Error New() { return {}; }
   template <typename Arg>
-  static Error New(Arg&& arg) { return std::move(Error{arg, 2}); }
+  static Error New(Arg&& arg) { return {arg, 2}; }
   static Error Errno() { return Error::New(strerror(errno)); }
 
   Error& Extend(const string& error);
@@ -42,7 +42,7 @@ public:
   Expect(const Error& error);
 
   template <typename Arg>
-  static Expect<T> New(Arg&& arg) { return std::move(Expect<T>{arg}); }
+  static Expect<T> New(Arg&& arg) { return {arg}; }
 
   static Expect WithError(const char* error) { return New(::Error{error, 2}); }
   static Expect WithError(string&& error) { return New(::Error{std::move(error), 2}); }

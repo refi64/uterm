@@ -3,14 +3,38 @@
 #include "terminal.h"
 #include "display.h"
 
-#include <xkbcommon/xkbcommon-keysyms.h>
+#include <concurrentqueue.h>
+#include <atomic>
+#include <thread>
+
+moodycamel::ConcurrentQueue<string> queue;
+std::atomic<bool> do_close{false};
+
+void OtherThread(Pty *pty) {
+  while (!do_close.load()) {
+    if (auto e_text = pty->Read()) {
+      if (!e_text->empty()) {
+        queue.enqueue(*e_text);
+      } else {
+        do_close.store(true);
+      }
+    } else {
+      auto err = e_text.Error();
+      e_text.Error().Extend("reading data from pty").Print();
+    }
+  }
+}
 
 int main() {
+  const char* shell = getenv("SHELL");
+
   Pty pty;
-  if (auto err = pty.Spawn({"/bin/bash", "-i"})) {
+  if (auto err = pty.Spawn({shell ? shell : "/bin/sh", "-i"})) {
     err.Extend("while initializing pty").Print();
     return 1;
   }
+
+  std::thread thread{OtherThread, &pty};
 
   Window w;
   if (auto err = w.Initialize(800, 600)) {
@@ -74,25 +98,43 @@ int main() {
   SkCanvas *canvas = w.canvas();
   canvas->clear(SK_ColorBLACK);
 
+  string buf;
+
   while (w.isopen()) {
+    if (do_close.load()) {
+      break;
+    }
+
     SkCanvas *canvas = w.canvas();
 
-    if (auto e_text = pty.NonblockingRead()) {
-      if (!e_text->empty()) {
-        term.WriteToScreen(*e_text);
-        term.Draw();
-      }
-    } else {
-      auto err = e_text.Error();
-      if (err.trace(0).find("EOF") != -1) {
-        break;
-      }
-      e_text.Error().Print();
-      continue;
+    bool needs_term_draw = false;
+    while (queue.try_dequeue(buf)) {
+      needs_term_draw = true;
+      term.WriteToScreen(buf);
     }
+
+    if (needs_term_draw) {
+      term.Draw();
+    }
+
+    /* if (auto e_text = pty.NonblockingRead()) { */
+    /*   if (!e_text->empty()) { */
+    /*     term.WriteToScreen(*e_text); */
+    /*     term.Draw(); */
+    /*   } */
+    /* } else { */
+    /*   auto err = e_text.Error(); */
+    /*   if (err.trace(0).find("EOF") != -1) { */
+    /*     break; */
+    /*   } */
+    /*   e_text.Error().Print(); */
+    /*   continue; */
+    /* } */
 
     w.DrawAndPoll(disp.Draw(canvas));
   }
 
+  do_close.store(true);
+  thread.join();
   return 0;
 }

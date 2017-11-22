@@ -8,7 +8,7 @@ public:
   ~Pty();
   Error Spawn(const std::vector<string>& command);
 
-  Expect<string> NonblockingRead();
+  Expect<string> Read();
   Error Write(const string& data);
   Error Signal(int signal);
   Error Resize(int x, int y);

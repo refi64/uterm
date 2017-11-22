@@ -13,3 +13,6 @@
 [submodule "deps/utfcpp"]
 	path = deps/utfcpp
 	url = https://github.com/nemtrif/utfcpp.git
+[submodule "deps/concurrentqueue"]
+	path = deps/concurrentqueue
+	url = https://github.com/cameron314/concurrentqueue

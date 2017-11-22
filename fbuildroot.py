@@ -746,7 +746,7 @@ def build(ctx):
 
     rec.cxx.build_exe('uterm', Path.glob('src/*.cc'),
                       includes=gl3w.includes + skia.includes + fmt.includes + \
-                               ['deps/utfcpp/source'],
+                               ['deps/utfcpp/source', 'deps/concurrentqueue'],
                       libs=[abseil.base, abseil.strings, abseil.stacktrace, gl3w.lib,
                             skia.lib, fmt.lib],
                       macros=['UTERM_BLACK_SCREEN_WORKAROUND'],
