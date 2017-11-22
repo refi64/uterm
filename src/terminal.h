@@ -33,7 +33,7 @@ struct Attr {
 
   bool operator==(const Attr &rhs) const {
     return foreground == rhs.foreground && background == rhs.background &&
-           flags == rhs.flags;
+           flags == rhs.flags && dirty == rhs.dirty && selected == rhs.selected;
   }
 
   struct Hash {

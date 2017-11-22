@@ -34,32 +34,19 @@ void Display::SetSelection(Selection state, int mx, int my) {
   int y = clamp(my / m_primary.GetHeight(), 0, m_text.rows() - 1);
 
   // Reset the old selection...
-  auto old_sel = m_term->selection();
-  uint old_sel_begin = m_text.PosToOffset(old_sel.begin_x, old_sel.begin_y),
-       old_sel_end = m_text.PosToOffset(old_sel.end_x, old_sel.end_y);
-
-  m_attrs.UpdateWith(old_sel_begin, old_sel_end, [](Attr &attr) {
-    attr.dirty = true;
-    attr.selected = false;
-  });
-
+  SetSelectionRangeAttrs(m_term->selection(), false);
   m_term->SetSelection(state, x, y);
-
   // ...and mark the new one.
-  auto new_sel = m_term->selection();
-  uint new_sel_begin = m_text.PosToOffset(new_sel.begin_x, new_sel.begin_y),
-       new_sel_end = m_text.PosToOffset(new_sel.end_x, new_sel.end_y);
-
-  m_attrs.UpdateWith(new_sel_begin, new_sel_end, [](Attr &attr) {
-    attr.dirty = true;
-    attr.selected = true;
-  });
+  SetSelectionRangeAttrs(m_term->selection(), true);
 
   m_has_updated = true;
 }
 
 void Display::EndSelection() {
+  SetSelectionRangeAttrs(m_term->selection(), false);
   m_term->EndSelection();
+  fmt::print("{} {}\n", m_term->selection().begin_x, m_term->selection().end_x);
+  SetSelectionRangeAttrs(m_term->selection(), true);
 }
 
 Error Display::Resize(int width, int height) {
@@ -136,6 +123,16 @@ bool Display::Draw(SkCanvas *canvas) {
 
   m_has_updated = false;
   return significant_redraw;
+}
+
+void Display::SetSelectionRangeAttrs(const SelectionRange &selection, bool selected) {
+  uint begin = m_text.PosToOffset(selection.begin_x, selection.begin_y),
+       end = m_text.PosToOffset(selection.end_x, selection.end_y);
+
+  m_attrs.UpdateWith(begin, end, [&](Attr &attr) {
+    attr.dirty = true;
+    attr.selected = selected;
+  });
 }
 
 void Display::TermDraw(const u32string& str, Pos pos, Attr attr, int width) {
