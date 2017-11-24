@@ -6,22 +6,13 @@
 #include <xkbcommon/xkbcommon-keysyms.h>
 #include <utf8.h>
 
-Terminal::Terminal(Attr defaults): m_default_attr{defaults} {
+Terminal::Terminal() {
   tsm_screen_new(&m_screen, nullptr, nullptr);
   tsm_vte_new(&m_vte, m_screen, StaticWrite, static_cast<void*>(this), nullptr, nullptr);
 
-  assert(!m_default_attr.flags && !m_default_attr.dirty);
-
   tsm_screen_attr tattr;
-  tattr.fccode = tattr.bccode = -1;
-
-  tattr.fr = SkColorGetR(m_default_attr.foreground);
-  tattr.fg = SkColorGetG(m_default_attr.foreground);
-  tattr.fb = SkColorGetB(m_default_attr.foreground);
-
-  tattr.br = SkColorGetR(m_default_attr.background);
-  tattr.bg = SkColorGetG(m_default_attr.background);
-  tattr.bb = SkColorGetB(m_default_attr.background);
+  tattr.fccode = Colors::kForeground;
+  tattr.bccode = Colors::kBackground;
 
   tattr.bold = tattr.underline = tattr.inverse = tattr.protect = tattr.blink = 0;
   tsm_screen_set_def_attr(m_screen, &tattr);

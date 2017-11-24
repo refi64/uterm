@@ -27,7 +27,7 @@ struct SelectionRange { Pos begin{0, 0}, end{0, 0}, origin{0, 0}; };
 
 class Terminal {
 public:
-  Terminal(Attr defaults);
+  Terminal();
 
   using DrawCb = std::function<void(const u32string&, Pos, Attr, int)>;
   using CopyCb = std::function<void(const string&)>;

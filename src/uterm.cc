@@ -28,8 +28,8 @@ void OtherThread(Pty *pty) {
 }
 
 int main() {
-  /* const char* shell = getenv("SHELL"); */
-  const char* shell = "/bin/sh";
+  const char* shell = getenv("SHELL");
+  /* const char* shell = "/bin/sh"; */
 
   Pty pty;
   if (auto err = pty.Spawn({shell ? shell : "/bin/sh", "-i"})) {
@@ -53,13 +53,7 @@ int main() {
     return w.ClipboardRead();
   };
 
-  Attr attr;
-  attr.foreground = SK_ColorWHITE;
-  attr.background = SK_ColorBLACK;
-  attr.flags = 0;
-  attr.dirty = false;
-
-  Terminal term{attr};
+  Terminal term;
   term.set_pty(&pty);
   term.set_copy_cb(copy);
   term.set_paste_cb(paste);
