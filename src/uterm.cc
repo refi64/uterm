@@ -3,18 +3,20 @@
 #include "terminal.h"
 #include "display.h"
 
-#include <concurrentqueue.h>
 #include <atomic>
 #include <thread>
+#include <mutex>
 
-moodycamel::ConcurrentQueue<string> queue;
+std::mutex mutex;
+string buffer;
 std::atomic<bool> do_close{false};
 
 void OtherThread(Pty *pty) {
   while (!do_close.load()) {
     if (auto e_text = pty->Read()) {
       if (!e_text->empty()) {
-        queue.enqueue(*e_text);
+        std::unique_lock<std::mutex> lock{mutex};
+        buffer += *e_text;
       } else {
         do_close.store(true);
       }
@@ -107,29 +109,17 @@ int main() {
 
     SkCanvas *canvas = w.canvas();
 
-    bool needs_term_draw = false;
-    while (queue.try_dequeue(buf)) {
-      needs_term_draw = true;
-      term.WriteToScreen(buf);
+    string local_buffer;
+    {
+      std::unique_lock<std::mutex> lock{mutex};
+      local_buffer = buffer;
+      buffer.clear();
     }
 
-    if (needs_term_draw) {
+    if (!local_buffer.empty()) {
+      term.WriteToScreen(local_buffer);
       term.Draw();
     }
-
-    /* if (auto e_text = pty.NonblockingRead()) { */
-    /*   if (!e_text->empty()) { */
-    /*     term.WriteToScreen(*e_text); */
-    /*     term.Draw(); */
-    /*   } */
-    /* } else { */
-    /*   auto err = e_text.Error(); */
-    /*   if (err.trace(0).find("EOF") != -1) { */
-    /*     break; */
-    /*   } */
-    /*   e_text.Error().Print(); */
-    /*   continue; */
-    /* } */
 
     w.DrawAndPoll(disp.Draw(canvas));
   }
