@@ -157,6 +157,10 @@ void Terminal::StaticWrite(tsm_vte *vte, const char *u8, size_t len, void *data)
   }
 }
 
+static SkColor TsmAttrColorCodeToSkColor(int code) {
+  return kDefaultTheme[std::min(code, Colors::kMax)];
+}
+
 int Terminal::StaticDraw(tsm_screen *screen, uint32 id, const uint32 *chars, size_t len,
                          uint width, uint posx, uint posy, const tsm_screen_attr *tattr,
                          tsm_age_t age, void *data) {
@@ -172,8 +176,18 @@ int Terminal::StaticDraw(tsm_screen *screen, uint32 id, const uint32 *chars, siz
   Pos pos{posx, posy};
 
   Attr attr;
-  attr.foreground = SkColorSetRGB(tattr->fr, tattr->fg, tattr->fb);
-  attr.background = SkColorSetRGB(tattr->br, tattr->bg, tattr->bb);
+
+  if (tattr->fccode >= 0) {
+    attr.foreground = TsmAttrColorCodeToSkColor(tattr->fccode);
+  } else {
+    attr.foreground = SkColorSetRGB(tattr->fr, tattr->fg, tattr->fb);
+  }
+  if (tattr->bccode >= 0) {
+    attr.background = TsmAttrColorCodeToSkColor(tattr->bccode);
+  } else {
+    attr.background = SkColorSetRGB(tattr->br, tattr->bg, tattr->bb);
+  }
+
   attr.flags = 0;
   if (tattr->bold) {
     attr.flags |= Attr::kBold;

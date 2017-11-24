@@ -3,8 +3,8 @@
 #include "uterm.h"
 #include "error.h"
 #include "pty.h"
+#include "attrs.h"
 
-#include <SkColor.h>
 #include <functional>
 
 #include <libtsm.h>
@@ -19,40 +19,6 @@ namespace KeyboardModifier {
 struct Pos {
   Pos(uint nx, uint ny): x{nx}, y{ny} {}
   uint x, y;
-};
-
-struct Attr {
-  SkColor foreground, background;
-
-  static constexpr int kBold = 1<<1,
-                       kUnderline = 1<<2,
-                       kInverse = 1<<3,
-                       kProtect = 1<<4;
-  int flags{0};
-  bool dirty{false}, selected{false};
-
-  bool operator==(const Attr &rhs) const {
-    return foreground == rhs.foreground && background == rhs.background &&
-           flags == rhs.flags && dirty == rhs.dirty && selected == rhs.selected;
-  }
-
-  struct Hash {
-    template <typename T>
-    static void combine(size_t *current, T value) {
-      std::hash<T> hasher;
-      *current ^= hasher(value) + 0x9e3779b9 + (*current << 6) + (*current >> 2);
-    }
-
-    size_t operator()(const Attr &attr) const {
-      size_t hash = 0;
-      combine(&hash, attr.foreground);
-      combine(&hash, attr.background);
-      combine(&hash, attr.flags);
-      combine(&hash, attr.dirty);
-      combine(&hash, attr.selected);
-      return hash;
-    }
-  };
 };
 
 struct SelectionRange { int begin_x, begin_y, end_x, end_y; };
