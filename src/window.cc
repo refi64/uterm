@@ -44,6 +44,9 @@ Error Window::Initialize(int width, int height) {
   glfwWindowHint(GLFW_DEPTH_BITS, 0);
   glfwWindowHint(GLFW_STENCIL_BITS, kStencilBits);
   glfwWindowHint(GLFW_SAMPLES, kSamples);
+  #ifdef GLFW_TRANSPARENT_FRAMEBUFFER
+  glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, 1);
+  #endif
 
   m_window = glfwCreateWindow(width, height, "uterm", nullptr, nullptr);
   if (m_window == nullptr)
@@ -62,6 +65,10 @@ Error Window::Initialize(int width, int height) {
 
   m_cursor = glfwCreateStandardCursor(GLFW_IBEAM_CURSOR);
   glfwSetCursor(m_window, m_cursor);
+
+  #ifdef GLFW_TRANSPARENT_FRAMEBUFFER
+  glfwSetWindowOpacity(m_window, 0);
+  #endif
 
   if (gl3wInit())
     return Error::New("failed to initialize OpenGL");

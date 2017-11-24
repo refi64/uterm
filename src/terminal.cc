@@ -133,6 +133,12 @@ bool Terminal::WriteKeysymToPty(uint32 keysym, int mods) {
     Draw();
 
     return true;
+  } else if (keysym == XKB_KEY_Up && mods & KeyboardModifier::kShift) {
+    Scroll(ScrollDirection::kUp, 1);
+    return true;
+  } else if (keysym == XKB_KEY_Down && mods & KeyboardModifier::kShift) {
+    Scroll(ScrollDirection::kDown, 1);
+    return true;
   } else {
     return tsm_vte_handle_keyboard(m_vte, keysym, keysym, mods, TSM_VTE_INVALID);
   }

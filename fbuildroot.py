@@ -750,5 +750,6 @@ def build(ctx):
                       libs=[abseil.base, abseil.strings, abseil.stacktrace, gl3w.lib,
                             skia.lib, fmt.lib],
                       macros=['UTERM_BLACK_SCREEN_WORKAROUND'],
-                      external_libs=['glfw', 'GL', 'tsm', 'X11', 'dl', 'pthread', 'profiler'],
-                      lflags=['-fuse-ld=lld'])
+                      external_libs=['glfw3', 'GL', 'tsm', 'X11', 'dl', 'pthread', 'profiler'],
+                      cflags=['-I/home/ryan/stuff/glfw/install/include'],
+                      lflags=['-fuse-ld=lld', '-L/home/ryan/stuff/glfw/install/lib'])

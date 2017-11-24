@@ -43,7 +43,7 @@ static const std::array<SkColor, Colors::kMax + 1> kDefaultTheme{
   SkColorSetRGB(0xff, 0xff, 0xff),  // kWhite + kBold
 
   SkColorSetRGB(0xff, 0xff, 0xff),  // kForeground
-  SkColorSetRGB(0x00, 0x00, 0x00),  // kBackground
+  SkColorSetARGB(0xef, 0x2a, 0x34, 0x39),  // kBackground
 };
 
 struct Attr {

@@ -106,7 +106,7 @@ int main() {
   w.set_scroll_cb(scroll);
 
   SkCanvas *canvas = w.canvas();
-  canvas->clear(SK_ColorBLACK);
+  canvas->clear(SK_ColorTRANSPARENT);
 
   string buf;
 
