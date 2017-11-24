@@ -21,6 +21,7 @@ void Window::set_key_cb(KeyCb key_cb) { m_key_cb = key_cb; }
 void Window::set_char_cb(CharCb char_cb) { m_char_cb = char_cb; }
 void Window::set_resize_cb(ResizeCb resize_cb) { m_resize_cb = resize_cb; }
 void Window::set_selection_cb(SelectionCb selection_cb) { m_selection_cb = selection_cb; }
+void Window::set_scroll_cb(ScrollCb scroll_cb) { m_scroll_cb = scroll_cb; }
 
 bool Window::isopen() {
   assert(m_window);
@@ -57,6 +58,7 @@ Error Window::Initialize(int width, int height) {
   glfwSetWindowSizeCallback(m_window, StaticWinResizeCallback);
   glfwSetFramebufferSizeCallback(m_window, StaticFbResizeCallback);
   glfwSetMouseButtonCallback(m_window, StaticMouseCallback);
+  glfwSetScrollCallback(m_window, StaticScrollCallback);
 
   m_cursor = glfwCreateStandardCursor(GLFW_IBEAM_CURSOR);
   glfwSetCursor(m_window, m_cursor);
@@ -201,5 +203,15 @@ void Window::StaticMouseCallback(GLFWwindow *glfw_window, int button, int action
     window->m_selection_active = true;
   } else if (action == GLFW_RELEASE) {
     window->m_selection_active = false;
+  }
+}
+
+void Window::StaticScrollCallback(GLFWwindow *glfw_window, double xoffset,
+                                  double yoffset) {
+  Window *window = static_cast<Window*>(glfwGetWindowUserPointer(glfw_window));
+  if (yoffset > 0) {
+    window->m_scroll_cb(ScrollDirection::kUp, yoffset);
+  } else if (yoffset < 0) {
+    window->m_scroll_cb(ScrollDirection::kDown, -yoffset);
   }
 }

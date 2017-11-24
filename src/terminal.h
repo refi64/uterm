@@ -77,6 +77,8 @@ public:
   void ResetSelection();
   const SelectionRange & selection() { return m_selection_range; }
 
+  void Scroll(ScrollDirection direction, uint distance);
+
   const Attr & default_attr() { return m_default_attr; }
   Error Resize(int x, int y);
   void WriteToScreen(string text);

@@ -26,6 +26,9 @@ Terminal::Terminal(Attr defaults): m_default_attr{defaults} {
   tattr.bold = tattr.underline = tattr.inverse = tattr.protect = tattr.blink = 0;
   tsm_screen_set_def_attr(m_screen, &tattr);
 
+  constexpr int kMaxSb = 1024;
+  tsm_screen_set_max_sb(m_screen, kMaxSb);
+
   ResetSelection();
 }
 
@@ -94,6 +97,17 @@ Error Terminal::Resize(int x, int y) {
     return err.Extend("resizing terminal");
   } else {
     return Error::New();
+  }
+}
+
+void Terminal::Scroll(ScrollDirection direction, uint distance) {
+  switch (direction) {
+  case ScrollDirection::kUp:
+    tsm_screen_sb_up(m_screen, distance);
+    break;
+  case ScrollDirection::kDown:
+    tsm_screen_sb_down(m_screen, distance);
+    break;
   }
 }
 

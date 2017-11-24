@@ -10,3 +10,4 @@ using uint = unsigned int;
 using uint32 = uint32_t;
 
 enum class Selection { kBegin, kUpdate, kEnd };
+enum class ScrollDirection { kUp, kDown };

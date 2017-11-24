@@ -19,6 +19,7 @@ public:
   using CharCb = std::function<void(uint)>;
   using ResizeCb = std::function<void(int, int)>;
   using SelectionCb = std::function<void(Selection, double, double)>;
+  using ScrollCb = std::function<void(ScrollDirection, uint)>;
 
   Window();
   ~Window();
@@ -27,6 +28,7 @@ public:
   void set_char_cb(CharCb char_cb);
   void set_resize_cb(ResizeCb resize_cb);
   void set_selection_cb(SelectionCb selection_cb);
+  void set_scroll_cb(ScrollCb scroll_cb);
 
   Error Initialize(int width, int height);
   bool isopen();
@@ -39,6 +41,7 @@ private:
   CharCb m_char_cb;
   ResizeCb m_resize_cb;
   SelectionCb m_selection_cb;
+  ScrollCb m_scroll_cb;
 
   Error CreateSurface();
 
@@ -49,6 +52,8 @@ private:
   static void StaticFbResizeCallback(GLFWwindow *glfw_window, int width, int height);
   static void StaticMouseCallback(GLFWwindow *glfw_window, int button, int action,
                                   int mods);
+  static void StaticScrollCallback(GLFWwindow *glfw_window, double xoffset,
+                                   double yoffset);
 
   GLFWwindow *m_window{nullptr};
   GLFWcursor *m_cursor{nullptr};
