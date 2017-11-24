@@ -19,9 +19,11 @@ namespace KeyboardModifier {
 struct Pos {
   Pos(uint nx, uint ny): x{nx}, y{ny} {}
   uint x, y;
+
+  bool operator==(Pos rhs) { return x == rhs.x && y == rhs.y; }
 };
 
-struct SelectionRange { int begin_x, begin_y, end_x, end_y; };
+struct SelectionRange { Pos begin{0, 0}, end{0, 0}, origin{0, 0}; };
 
 class Terminal {
 public:
@@ -38,10 +40,9 @@ public:
 
   Pos cursor();
 
-  void SetSelection(Selection state, int x, int y);
+  void SetSelection(Selection state, uint x, uint y);
   void EndSelection();
   void ResetSelection();
-  const SelectionRange & selection() { return m_selection_range; }
 
   void Scroll(ScrollDirection direction, uint distance);
 

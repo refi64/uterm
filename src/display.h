@@ -23,7 +23,6 @@ public:
   Error Resize(int width, int height);
   bool Draw(SkCanvas *canvas);
 private:
-  void SetSelectionRangeAttrs(const SelectionRange &selection, bool selected);
   void TermDraw(const u32string& str, Pos pos, Attr attr, int width);
   void UpdateWidth();
   void UpdatePositions();

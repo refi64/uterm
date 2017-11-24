@@ -41,30 +41,24 @@ Pos Terminal::cursor() {
   return {tsm_screen_get_cursor_x(m_screen), tsm_screen_get_cursor_y(m_screen)};
 }
 
-void Terminal::SetSelection(Selection state, int x, int y) {
+void Terminal::SetSelection(Selection state, uint x, uint y) {
   switch (state) {
   case Selection::kBegin:
     ResetSelection();
     tsm_screen_selection_start(m_screen, x, y);
-    m_selection_range.begin_x = m_selection_range.end_x = x;
-    m_selection_range.begin_y = m_selection_range.end_y = y;
+    m_selection_range.begin = m_selection_range.end = m_selection_range.origin = {x, y};
     break;
   case Selection::kUpdate:
-    tsm_screen_selection_target(m_screen, x, y);
-
-    if (y < m_selection_range.begin_y ||
-        (y == m_selection_range.begin_y && x < m_selection_range.begin_x)) {
+    if (y < m_selection_range.origin.y ||
+        (y == m_selection_range.origin.y && x < m_selection_range.origin.x)) {
       // Moving backwards: update the beginning offsets.
-      m_selection_range.end_x = std::max(m_selection_range.begin_x,
-                                         m_selection_range.end_x);
-      m_selection_range.end_y = std::max(m_selection_range.begin_y,
-                                         m_selection_range.end_y);
-      m_selection_range.begin_x = x;
-      m_selection_range.begin_y = y;
+      m_selection_range.end = m_selection_range.origin;
+      m_selection_range.begin = {x, y};
     } else {
-      m_selection_range.end_x = x;
-      m_selection_range.end_y = y;
+      m_selection_range.end = {x, y};
     }
+
+    tsm_screen_selection_target(m_screen, x, y);
     break;
   case Selection::kEnd:
     assert(false);
@@ -72,21 +66,19 @@ void Terminal::SetSelection(Selection state, int x, int y) {
 }
 
 void Terminal::EndSelection() {
-  if (m_selection_range.begin_x == m_selection_range.end_x &&
-      m_selection_range.begin_y == m_selection_range.end_y) {
+  if (m_selection_range.begin == m_selection_range.end) {
     ResetSelection();
   } else {
     char *buf = nullptr;
     uint sz = tsm_screen_selection_copy(m_screen, &buf);
     m_selection_contents = string(buf, sz);
     free(buf);
-  }
+   }
 }
 
 void Terminal::ResetSelection() {
   tsm_screen_selection_reset(m_screen);
-  m_selection_range.begin_x = m_selection_range.begin_y = m_selection_range.end_x =
-                              m_selection_range.end_y = 0;
+  m_selection_range.begin = m_selection_range.end = m_selection_range.origin = {0, 0};
   m_selection_contents = "";
 }
 

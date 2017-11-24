@@ -28,7 +28,8 @@ void OtherThread(Pty *pty) {
 }
 
 int main() {
-  const char* shell = getenv("SHELL");
+  /* const char* shell = getenv("SHELL"); */
+  const char* shell = "/bin/sh";
 
   Pty pty;
   if (auto err = pty.Spawn({shell ? shell : "/bin/sh", "-i"})) {
@@ -133,7 +134,8 @@ int main() {
       term.Draw();
     }
 
-    w.DrawAndPoll(disp.Draw(canvas));
+    bool significant_redraw = disp.Draw(canvas);
+    w.DrawAndPoll(significant_redraw);
   }
 
   do_close.store(true);

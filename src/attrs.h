@@ -42,7 +42,7 @@ static const std::array<SkColor, Colors::kMax + 1> kDefaultTheme{
   SkColorSetRGB(0x00, 0xff, 0xff),  // kCyan + kBold
   SkColorSetRGB(0xff, 0xff, 0xff),  // kWhite + kBold
 
-  SkColorSetRGB(0xff, 0xff, 0xff),  // kForeground
+  SkColorSetRGB(0xff, 0xff, 0xff),         // kForeground
   SkColorSetARGB(0xef, 0x2a, 0x34, 0x39),  // kBackground
 };
 
@@ -54,11 +54,11 @@ struct Attr {
                        kInverse = 1<<3,
                        kProtect = 1<<4;
   int flags{0};
-  bool dirty{false}, selected{false};
+  bool dirty{false};
 
   bool operator==(const Attr &rhs) const {
     return foreground == rhs.foreground && background == rhs.background &&
-           flags == rhs.flags && dirty == rhs.dirty && selected == rhs.selected;
+           flags == rhs.flags && dirty == rhs.dirty;
   }
 
   struct Hash {
@@ -74,7 +74,6 @@ struct Attr {
       combine(&hash, attr.background);
       combine(&hash, attr.flags);
       combine(&hash, attr.dirty);
-      combine(&hash, attr.selected);
       return hash;
     }
   };
