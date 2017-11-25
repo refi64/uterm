@@ -85,11 +85,8 @@ int main() {
     else disp.SetSelection(state, mx, my);
   };
 
-  bool needs_redraw{false};
-
   auto scroll = [&](ScrollDirection direction, uint distance) {
     term.Scroll(direction, distance);
-    needs_redraw = true;
   };
 
   resize(800, 600);
@@ -118,10 +115,6 @@ int main() {
 
     if (!local_buffer.empty()) {
       term.WriteToScreen(local_buffer);
-      needs_redraw = true;
-    }
-
-    if (needs_redraw) {
       term.Draw();
     }
 
