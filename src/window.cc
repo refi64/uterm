@@ -160,6 +160,7 @@ Error Window::CreateSurface() {
   if (m_surface == nullptr)
     return Error::New("failed to create SkSurface");
 
+  canvas()->clear(kDefaultTheme[Colors::kBackground]);
   return Error::New();
 }
 

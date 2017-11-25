@@ -63,7 +63,7 @@ int main() {
   disp.SetPrimaryFont("Roboto Mono");
   disp.SetFallbackFont("Noto Sans");
 
-  constexpr SkScalar kFontSize = SkIntToScalar(15);
+  constexpr SkScalar kFontSize = SkIntToScalar(16);
   disp.SetTextSize(kFontSize);
 
   auto key = [&](uint32 keysym, int mods) {
@@ -99,9 +99,6 @@ int main() {
   w.set_resize_cb(resize);
   w.set_selection_cb(selection);
   w.set_scroll_cb(scroll);
-
-  SkCanvas *canvas = w.canvas();
-  canvas->clear(SK_ColorTRANSPARENT);
 
   string buf;
 
