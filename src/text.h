@@ -10,6 +10,11 @@
 #include "base.h"
 #include "terminal.h"
 
+enum class FontStyle { kNormal, kBold, kEnd };
+constexpr int FontStyleToInt(FontStyle style) { return static_cast<int>(style); }
+
+FontStyle AttrsToFontStyle(Attr attrs);
+
 // A GlyphRenderer knows little about its textual contents. Its sole goal is to store
 // glyphs in a horizontal array, and then render them using the given positions when
 // requested.
@@ -20,7 +25,7 @@ public:
   void Resize(int size);
   void SetTextSize(int height);
   void SetFont(string name);
-  bool UpdateGlyph(char32_t c, int index);
+  bool UpdateGlyph(char32_t c, int index, FontStyle style);
   void ClearGlyph(int index);
 
   int GetHeight();
@@ -30,16 +35,22 @@ public:
   void DrawRange(SkCanvas *canvas, SkPoint *positions, Attr attrs, size_t begin,
                  size_t end);
 private:
-  static constexpr char kCharMax = std::numeric_limits<char>::max();
   void UpdateForFontChange();
 
-  SkPaint m_paint;
+  static constexpr char kCharMax = std::numeric_limits<char>::max();
+  static constexpr int kStyleNormal = FontStyleToInt(FontStyle::kNormal),
+                       kStyleEnd = FontStyleToInt(FontStyle::kEnd);
 
-  sk_sp<SkTypeface> m_font;
+  struct StyledFont {
+    sk_sp<SkTypeface> font;
+    SkPaint paint;
+    std::array<SkGlyphID, kCharMax> glyph_cache;
+  };
+
+  std::array<StyledFont, kStyleEnd> m_styled_fonts;
+
   SkPaint::FontMetrics m_metrics;
-
   std::vector<SkGlyphID> m_glyphs;
-  std::array<SkGlyphID, kCharMax> m_glyph_cache;
 };
 
 // A TextManager is the bridge between a terminal's contents and a GlyphRenderer. It

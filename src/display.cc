@@ -46,8 +46,6 @@ Error Display::Resize(int width, int height) {
   int rows = height / m_primary.GetHeight();
   int cols = width / m_char_width;
 
-  m_fallbacks.resize(rows * cols);
-
   m_text.Resize(cols, rows);
 
   m_primary.Resize(rows * cols);
@@ -139,13 +137,12 @@ void Display::UpdateGlyphs() {
 void Display::UpdateGlyph(int x, int y) {
   int index = m_text.PosToOffset(x, y);
   char32_t c = m_text.cell(x, y);
+  FontStyle style = AttrsToFontStyle(m_attrs.At(index));
 
-  if (m_primary.UpdateGlyph(c, index)) {
-    m_fallbacks[index] = false;
+  if (m_primary.UpdateGlyph(c, index, style)) {
     m_fallback.ClearGlyph(index);
   } else {
-    m_fallbacks[index] = true;
-    m_fallback.UpdateGlyph(c, index);
+    m_fallback.UpdateGlyph(c, index, style);
   }
 }
 

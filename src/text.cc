@@ -1,11 +1,23 @@
 #include "text.h"
 
+FontStyle AttrsToFontStyle(Attr attrs) {
+  if (attrs.flags & Attr::kBold) {
+    return FontStyle::kBold;
+  } else {
+    return FontStyle::kNormal;
+  }
+}
+
 GlyphRenderer::GlyphRenderer() {
-  m_paint.setColor(SK_ColorWHITE);
-  m_paint.setAntiAlias(true);
-  m_paint.setTextEncoding(SkPaint::kUTF32_TextEncoding);
-  m_paint.setSubpixelText(true);
-  m_paint.setBlendMode(SkBlendMode::kSrc);
+  for (auto &styled_font : m_styled_fonts) {
+    SkPaint &paint = styled_font.paint;
+
+    paint.setColor(SK_ColorWHITE);
+    paint.setTextEncoding(SkPaint::kUTF32_TextEncoding);
+    paint.setBlendMode(SkBlendMode::kSrc);
+    paint.setSubpixelText(true);
+    paint.setAntiAlias(true);
+  }
 }
 
 void GlyphRenderer::Resize(int size) {
@@ -13,36 +25,49 @@ void GlyphRenderer::Resize(int size) {
 }
 
 void GlyphRenderer::SetTextSize(int height) {
-  m_paint.setTextSize(SkIntToScalar(height));
+  for (auto &styled_font : m_styled_fonts) {
+    styled_font.paint.setTextSize(SkIntToScalar(height));
+  }
+
   UpdateForFontChange();
 }
 
 void GlyphRenderer::SetFont(string name) {
-  m_font = SkTypeface::MakeFromName(name.c_str(), SkFontStyle{});
-  m_paint.setTypeface(m_font);
+  SkFontStyle styles[] = {
+    SkFontStyle::Normal(),
+    SkFontStyle::Bold(),
+  };
+
+  for (int i = 0; i < kStyleEnd; i++) {
+    m_styled_fonts[i].font = SkTypeface::MakeFromName(name.c_str(), styles[i]);
+    m_styled_fonts[i].paint.setTypeface(m_styled_fonts[i].font);
+  }
+
   UpdateForFontChange();
 }
 
-bool GlyphRenderer::UpdateGlyph(char32_t c, int index) {
+bool GlyphRenderer::UpdateGlyph(char32_t c, int index, FontStyle style) {
+  auto &styled_font = m_styled_fonts[FontStyleToInt(style)];
+
   if (c < kCharMax) {
-    auto glyph = m_glyph_cache[c];
+    auto glyph = styled_font.glyph_cache[c];
     if (glyph) {
       m_glyphs[index] = glyph;
       return true;
     }
   }
 
-  m_paint.setTextEncoding(SkPaint::kUTF32_TextEncoding);
-  m_paint.textToGlyphs(&c, sizeof(c), &m_glyphs[index]);
+  styled_font.paint.setTextEncoding(SkPaint::kUTF32_TextEncoding);
+  styled_font.paint.textToGlyphs(&c, sizeof(c), &m_glyphs[index]);
   return m_glyphs[index] != 0;
 }
 
 void GlyphRenderer::ClearGlyph(int index) {
-  m_glyphs[index] = m_glyph_cache[' '];
+  m_glyphs[index] = m_styled_fonts[kStyleNormal].glyph_cache[' '];
 }
 
 int GlyphRenderer::GetHeight() {
-  return m_paint.getTextSize() + m_metrics.fBottom;
+  return m_styled_fonts[kStyleNormal].paint.getTextSize() + m_metrics.fBottom;
 }
 
 int GlyphRenderer::GetWidth() {
@@ -52,7 +77,7 @@ int GlyphRenderer::GetWidth() {
 
   SkRect bounds;
   u32string s{'x'};
-  m_paint.measureText(s.c_str(), sizeof(s[0]), &bounds);
+  m_styled_fonts[kStyleNormal].paint.measureText(s.c_str(), sizeof(s[0]), &bounds);
   return bounds.width();
 }
 
@@ -62,26 +87,37 @@ int GlyphRenderer::GetBaselineOffset() {
 
 void GlyphRenderer::DrawRange(SkCanvas *canvas, SkPoint *positions, Attr attrs,
                               size_t begin, size_t end) {
-  m_paint.setTextEncoding(SkPaint::kGlyphID_TextEncoding);
+  auto style = AttrsToFontStyle(attrs);
+  auto &styled_font = m_styled_fonts[FontStyleToInt(style)];
+
+  auto &paint = styled_font.paint;
+
+  paint.setTextEncoding(SkPaint::kGlyphID_TextEncoding);
   if (attrs.flags & Attr::kInverse) {
-    m_paint.setColor(attrs.background);
+    paint.setColor(attrs.background);
   } else {
-    m_paint.setColor(attrs.foreground);
+    paint.setColor(attrs.foreground);
   }
   canvas->drawPosText(m_glyphs.data() + begin, (end - begin) * sizeof(m_glyphs[0]),
-                      positions + begin, m_paint);
+                      positions + begin, paint);
 }
 
 void GlyphRenderer::UpdateForFontChange() {
-  m_paint.getFontMetrics(&m_metrics);
-  m_paint.setTextEncoding(SkPaint::kUTF8_TextEncoding);
+  m_styled_fonts[kStyleNormal].paint.getFontMetrics(&m_metrics);
 
-  for (char c = 0; c < kCharMax; c++) {
-    if (isprint(c)) {
-      SkGlyphID glyph;
-      m_paint.textToGlyphs(&c, sizeof(c), &glyph);
-      if (glyph) {
-        m_glyph_cache[c] = glyph;
+  for (auto &styled_font : m_styled_fonts) {
+    SkPaint &paint = styled_font.paint;
+    auto &glyph_cache = styled_font.glyph_cache;
+
+    paint.setTextEncoding(SkPaint::kUTF8_TextEncoding);
+
+    for (char c = 0; c < kCharMax; c++) {
+      if (isprint(c)) {
+        SkGlyphID glyph;
+        paint.textToGlyphs(&c, sizeof(c), &glyph);
+        if (glyph) {
+          glyph_cache[c] = glyph;
+        }
       }
     }
   }

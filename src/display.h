@@ -35,7 +35,6 @@ private:
 
   TextManager m_text;
   GlyphRenderer m_primary, m_fallback;
-  std::vector<bool> m_fallbacks;
 
   using AttrSet = MarkerSet<Attr, Attr::Hash>;
   AttrSet m_attrs;
