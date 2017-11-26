@@ -7,7 +7,7 @@
 #include <array>
 #include <limits>
 
-#include "uterm.h"
+#include "base.h"
 #include "terminal.h"
 
 // A GlyphRenderer knows little about its textual contents. Its sole goal is to store
@@ -22,12 +22,13 @@ public:
   void SetFont(string name);
   bool UpdateGlyph(char32_t c, int index);
   void ClearGlyph(int index);
+
   int GetHeight();
   int GetWidth();
   int GetBaselineOffset();
 
   void DrawRange(SkCanvas *canvas, SkPoint *positions, Attr attrs, size_t begin,
-                 size_t end, bool inverse);
+                 size_t end);
 private:
   static constexpr char kCharMax = std::numeric_limits<char>::max();
   void UpdateForFontChange();
@@ -61,7 +62,7 @@ public:
   Pos OffsetToPos(uint offset) { return {offset % m_cols, offset / m_cols}; }
 
   void DrawRangeWithRenderer(SkCanvas *canvas, GlyphRenderer *renderer, Attr attrs,
-                             size_t begin, size_t end, bool inverse);
+                             size_t begin, size_t end);
 private:
   uint m_cols{0}, m_rows{0};
   std::u32string m_text;

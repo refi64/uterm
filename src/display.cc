@@ -69,29 +69,28 @@ Error Display::Resize(int width, int height) {
 bool Display::Draw(SkCanvas *canvas) {
   bool significant_redraw = m_has_updated;
 
-  std::vector<std::pair<AttrSet::Span, bool>> dirty;
+  std::vector<AttrSet::Span> dirty;
   AttrSet::Span *pspan = nullptr;
   while ((pspan = m_attrs.NextSpan(pspan))) {
     if (!pspan->data.dirty) continue;
 
     bool inverse = pspan->data.flags & Attr::kInverse;
-
-    SkColor background = inverse ? pspan->data.foreground : pspan->data.background;
+    SkColor background;
+    if (pspan->data.flags & Attr::kInverse) {
+      background = pspan->data.foreground;
+    } else {
+      background = pspan->data.background;
+    }
 
     HighlightRange(canvas, m_text.OffsetToPos(pspan->begin),
                    m_text.OffsetToPos(pspan->end), background);
 
-    dirty.emplace_back(*pspan, inverse);
+    dirty.push_back(*pspan);
   }
 
-  for (auto &sect : dirty) {
-    auto &span = sect.first;
-    bool inverse = sect.second;
-
-    m_text.DrawRangeWithRenderer(canvas, &m_primary, span.data, span.begin, span.end,
-                                 inverse);
-    m_text.DrawRangeWithRenderer(canvas, &m_fallback,  span.data, span.begin, span.end,
-                                 inverse);
+  for (auto &span : dirty) {
+    m_text.DrawRangeWithRenderer(canvas, &m_primary, span.data, span.begin, span.end);
+    m_text.DrawRangeWithRenderer(canvas, &m_fallback,  span.data, span.begin, span.end);
 
     m_attrs.UpdateWith(span.begin, span.end, [](Attr &attr) {
       attr.dirty = false;

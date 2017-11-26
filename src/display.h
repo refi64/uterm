@@ -4,7 +4,7 @@
 #include <SkCanvas.h>
 #include <SkPaint.h>
 
-#include "uterm.h"
+#include "base.h"
 #include "terminal.h"
 #include "text.h"
 #include "marker_set.h"

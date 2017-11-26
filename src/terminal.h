@@ -1,6 +1,6 @@
 #pragma once
 
-#include "uterm.h"
+#include "base.h"
 #include "error.h"
 #include "pty.h"
 #include "attrs.h"

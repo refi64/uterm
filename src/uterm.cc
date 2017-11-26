@@ -1,24 +1,31 @@
 #include "uterm.h"
-#include "window.h"
-#include "terminal.h"
-#include "display.h"
 
-#include <atomic>
-#include <thread>
-#include <mutex>
+void ProtectedBuffer::Append(string text) {
+  std::unique_lock<std::mutex> lock{m_lock};
+  m_buffer += text;
+}
 
-std::mutex mutex;
-string buffer;
-std::atomic<bool> do_close{false};
+string ProtectedBuffer::ReadAndClear() {
+  std::unique_lock<std::mutex> lock{m_lock};
+  string result = m_buffer;
+  m_buffer.clear();
+  return result;
+}
 
-void OtherThread(Pty *pty) {
-  while (!do_close.load()) {
+ReaderThread::ReaderThread(Pty *pty): m_thread{&ReaderThread::StaticRun, this, pty} {}
+
+void ReaderThread::Stop() {
+  m_done_flag.set();
+  m_thread.join();
+}
+
+void ReaderThread::StaticRun(Pty *pty) {
+  while (!m_done_flag.get()) {
     if (auto e_text = pty->Read()) {
       if (!e_text->empty()) {
-        std::unique_lock<std::mutex> lock{mutex};
-        buffer += *e_text;
+        m_buffer.Append(*e_text);
       } else {
-        do_close.store(true);
+        m_done_flag.set();
       }
     } else {
       auto err = e_text.Error();
@@ -27,9 +34,13 @@ void OtherThread(Pty *pty) {
   }
 }
 
-int main() {
-  const char* shell = getenv("SHELL");
-  /* const char* shell = "/bin/sh"; */
+int Uterm::Run() {
+  using namespace std::placeholders;
+
+  constexpr int kWidth = 800, kHeight = 600;
+  constexpr SkScalar kFontSize = SkIntToScalar(16);
+
+  const char *shell = getenv("SHELL");
 
   Pty pty;
   if (auto err = pty.Spawn({shell ? shell : "/bin/sh", "-i"})) {
@@ -37,92 +48,78 @@ int main() {
     return 1;
   }
 
-  std::thread thread{OtherThread, &pty};
+  ReaderThread reader{&pty};
 
-  Window w;
-  if (auto err = w.Initialize(800, 600)) {
+  if (auto err = m_window.Initialize(kWidth, kHeight)) {
     err.Extend("while initializing window").Print();
     return 1;
   }
 
-  auto copy = [&](const string& str) {
-    w.ClipboardWrite(str);
-  };
+  m_term.set_pty(&pty);
+  m_term.set_copy_cb(std::bind(&Uterm::HandleCopy, this, _1));
+  m_term.set_paste_cb(std::bind(&Uterm::HandlePaste, this));
 
-  auto paste = [&]() -> string {
-    return w.ClipboardRead();
-  };
+  m_display.SetPrimaryFont("Roboto Mono");
+  m_display.SetFallbackFont("Noto Sans");
 
-  Terminal term;
-  term.set_pty(&pty);
-  term.set_copy_cb(copy);
-  term.set_paste_cb(paste);
+  m_display.SetTextSize(kFontSize);
 
-  Display disp{&term};
+  HandleResize(kWidth, kHeight);
 
-  disp.SetPrimaryFont("Roboto Mono");
-  disp.SetFallbackFont("Noto Sans");
+  m_window.set_key_cb(std::bind(&Uterm::HandleKey, this, _1, _2));
+  m_window.set_char_cb(std::bind(&Uterm::HandleChar, this, _1));
+  m_window.set_resize_cb(std::bind(&Uterm::HandleResize, this, _1, _2));
+  m_window.set_selection_cb(std::bind(&Uterm::HandleSelection, this, _1, _2, _3));
+  m_window.set_scroll_cb(std::bind(&Uterm::HandleScroll, this, _1, _2));
 
-  constexpr SkScalar kFontSize = SkIntToScalar(16);
-  disp.SetTextSize(kFontSize);
+  while (m_window.isopen() && !reader.done()) {
+    SkCanvas *canvas = m_window.canvas();
 
-  auto key = [&](uint32 keysym, int mods) {
-    term.WriteKeysymToPty(keysym, mods);
-  };
-
-  auto char_ = [&](uint code) {
-    term.WriteUnicodeToPty(code);
-  };
-
-  auto resize = [&](int width, int height) {
-    if (auto err = disp.Resize(width, height)) {
-      err.Print();
-    }
-  };
-
-  auto selection = [&](Selection state, double mx, double my) {
-    if (state == Selection::kEnd) disp.EndSelection();
-    else disp.SetSelection(state, mx, my);
-  };
-
-  auto scroll = [&](ScrollDirection direction, uint distance) {
-    term.Scroll(direction, distance);
-  };
-
-  resize(800, 600);
-
-  w.set_key_cb(key);
-  w.set_char_cb(char_);
-  w.set_resize_cb(resize);
-  w.set_selection_cb(selection);
-  w.set_scroll_cb(scroll);
-
-  string buf;
-
-  while (w.isopen()) {
-    if (do_close.load()) {
-      break;
+    string buffer = reader.buffer().ReadAndClear();
+    if (!buffer.empty()) {
+      m_term.WriteToScreen(buffer);
     }
 
-    SkCanvas *canvas = w.canvas();
+    m_term.Draw();
 
-    string local_buffer;
-    {
-      std::unique_lock<std::mutex> lock{mutex};
-      local_buffer = buffer;
-      buffer.clear();
-    }
-
-    if (!local_buffer.empty()) {
-      term.WriteToScreen(local_buffer);
-      term.Draw();
-    }
-
-    bool significant_redraw = disp.Draw(canvas);
-    w.DrawAndPoll(significant_redraw);
+    bool significant_redraw = m_display.Draw(canvas);
+    m_window.DrawAndPoll(significant_redraw);
   }
 
-  do_close.store(true);
-  thread.join();
+  reader.Stop();
   return 0;
+}
+
+void Uterm::HandleCopy(const string &str) {
+  m_window.ClipboardWrite(str);
+}
+
+string Uterm::HandlePaste() {
+  return m_window.ClipboardRead();
+}
+
+void Uterm::HandleKey(uint32 keysym, int mods) {
+  m_term.WriteKeysymToPty(keysym, mods);
+}
+
+void Uterm::HandleChar(uint code) {
+  m_term.WriteUnicodeToPty(code);
+}
+
+void Uterm::HandleResize(int width, int height) {
+  if (auto err = m_display.Resize(width, height)) {
+    err.Extend("while resizing terminal display").Print();
+  }
+}
+
+void Uterm::HandleSelection(Selection state, double mx, double my) {
+  if (state == Selection::kEnd) {
+    m_display.EndSelection();
+  } else {
+    m_display.SetSelection(state, mx, my);
+  }
+}
+
+void Uterm::HandleScroll(ScrollDirection direction, uint distance) {
+  m_term.Scroll(direction, distance);
 }
