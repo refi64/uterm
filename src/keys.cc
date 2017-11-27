@@ -4,12 +4,31 @@
 #include <GLFW/glfw3.h>
 
 uint32 GlfwKeyToXkbKeysym(int key) {
+  bool numlock = true;
+
   if (key >= GLFW_KEY_SPACE && key <= GLFW_KEY_GRAVE_ACCENT) {
     // Both GLFW and xkbcommon use the ASCII code as the key #.
     return key;
   } else if (key >= GLFW_KEY_F1 && key <= GLFW_KEY_F25) {
     return (key - GLFW_KEY_F1) + XKB_KEY_F1;
   } else if (key >= GLFW_KEY_KP_0 && key <= GLFW_KEY_KP_9) {
+    if (numlock) {
+      // XXX: Hardcode number pad directional keys.
+      switch (key) {
+      case GLFW_KEY_KP_0: return XKB_KEY_KP_Insert;
+      case GLFW_KEY_KP_1: return XKB_KEY_KP_End;
+      case GLFW_KEY_KP_2: return XKB_KEY_KP_Down;
+      case GLFW_KEY_KP_3: return XKB_KEY_KP_Page_Down;
+      case GLFW_KEY_KP_4: return XKB_KEY_KP_Left;
+      case GLFW_KEY_KP_5: break;
+      case GLFW_KEY_KP_6: return XKB_KEY_KP_Right;
+      case GLFW_KEY_KP_7: return XKB_KEY_KP_Home;
+      case GLFW_KEY_KP_8: return XKB_KEY_KP_Up;
+      case GLFW_KEY_KP_9: return XKB_KEY_KP_Page_Up;
+      default: break;
+      }
+    }
+
     return (key - GLFW_KEY_KP_0) + XKB_KEY_KP_0;
   } else {
     switch (key) {
@@ -33,7 +52,7 @@ uint32 GlfwKeyToXkbKeysym(int key) {
     case GLFW_KEY_PRINT_SCREEN: return XKB_KEY_Print;
     case GLFW_KEY_PAUSE: return XKB_KEY_Pause;
 
-    case GLFW_KEY_KP_DECIMAL: return XKB_KEY_KP_Decimal;
+    case GLFW_KEY_KP_DECIMAL: return numlock ? XKB_KEY_KP_Delete : XKB_KEY_KP_Decimal;
     case GLFW_KEY_KP_DIVIDE: return XKB_KEY_KP_Divide;
     case GLFW_KEY_KP_MULTIPLY: return XKB_KEY_KP_Multiply;
     case GLFW_KEY_KP_SUBTRACT: return XKB_KEY_KP_Subtract;
