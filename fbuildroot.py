@@ -18,12 +18,17 @@ def arguments(parser):
 
 
 def configure(ctx):
-    posix_flags = ['-std=c++11']
+    posix_flags = ['-std=c++11', '-Wno-unused-command-line-argument']
     clang_flags = []
+    nonclang_flags = []
     kw = {}
 
     if ctx.options.release:
         kw['optimize'] = True
+        posix_flags.append('-flto')
+        # clang_flags.append('-fuse-ld=lld')
+        posix_flags.append('-fuse-ld=lld')
+        # nonclang_flags.append('-fuse-ld=gold')
     else:
         kw['debug'] = True
         clang_flags.append('-fno-limit-debug-info')
@@ -36,6 +41,7 @@ def configure(ctx):
                           ({'posix'}, {'flags+': posix_flags}),
                           ({'clang'}, {'flags+': clang_flags,
                                        'macros': ['__CLANG_SUPPORT_DYN_ANNOTATION__']}),
+                          # ({'!clang'}, {'flags+': nonclang_flags}),
                        ], **kw)
 
     return Record(cxx=cxx)

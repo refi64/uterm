@@ -24,6 +24,8 @@ void ReaderThread::StaticRun(Pty *pty) {
     if (auto e_text = pty->Read()) {
       if (!e_text->empty()) {
         m_buffer.Append(*e_text);
+        // Do a short (0.5ms) sleep to avoid high CPU usage because of short polls.
+        usleep(500);
       } else {
         m_done_flag.set();
       }
