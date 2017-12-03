@@ -55,6 +55,10 @@ Error Display::Resize(int width, int height) {
   auto err = m_term->Resize(cols, rows);
 
   UpdatePositions();
+
+  m_attrs.UpdateWith(0, m_text.rows() * m_text.cols(), [](Attr &attr) {
+    attr.dirty = true;
+  });
   m_has_updated = true;
 
   if (err) {
