@@ -29,6 +29,10 @@ bool Window::isopen() {
 }
 
 Error Window::Initialize(int width, int height) {
+  glfwSetErrorCallback([](int ec, const char *err) {
+    fmt::print("GLFW error: {}\n", err);
+  });
+
   if (!glfwInit())
     return Error::New("failed to initialize GLFW");
 
@@ -65,10 +69,6 @@ Error Window::Initialize(int width, int height) {
 
   m_cursor = glfwCreateStandardCursor(GLFW_IBEAM_CURSOR);
   glfwSetCursor(m_window, m_cursor);
-
-  #ifdef GLFW_TRANSPARENT_FRAMEBUFFER
-  glfwSetWindowOpacity(m_window, 0);
-  #endif
 
   if (gl3wInit())
     return Error::New("failed to initialize OpenGL");
