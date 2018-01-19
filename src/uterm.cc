@@ -1,5 +1,8 @@
 #include "uterm.h"
 
+#include <sys/wait.h>
+#include <signal.h>
+
 void ProtectedBuffer::Append(string text) {
   std::unique_lock<std::mutex> lock{m_lock};
   m_buffer += text;
@@ -36,11 +39,17 @@ void ReaderThread::StaticRun(Pty *pty) {
   }
 }
 
+static void CatchSigchld(int sig) {
+  waitpid(-1, NULL, WNOHANG);
+}
+
 int Uterm::Run() {
   using namespace std::placeholders;
 
   constexpr int kWidth = 800, kHeight = 600;
   constexpr SkScalar kFontSize = SkIntToScalar(16);
+
+  signal(SIGCHLD, CatchSigchld);
 
   const char *shell = getenv("SHELL");
 
