@@ -108,7 +108,7 @@ Error Pty::Spawn(const std::vector<string>& command) {
   }
 }
 
-Expect<string> Pty::Read() {
+Expect<string> Pty::Read(bool& eof) {
   pollfd poll_master;
   poll_master.fd = m_master;
   poll_master.events = POLLIN;
@@ -116,7 +116,11 @@ Expect<string> Pty::Read() {
 
   int polled = poll(&poll_master, 1, -1);
   if (polled == -1) {
-    return Expect<string>::New(Error::Errno().Extend("polling master PTY"));
+    if (errno == EINTR) {
+      return Expect<string>::New(string(""));
+    } else {
+      return Expect<string>::New(Error::Errno().Extend("polling master PTY"));
+    }
   } else if (poll_master.revents & POLLIN) {
     char buf[4096];
     int sz = read(m_master, buf, sizeof(buf));
@@ -127,6 +131,7 @@ Expect<string> Pty::Read() {
 
     return Expect<string>::New(string(buf, sz));
   } else if (poll_master.revents & (POLLERR | POLLHUP)) {
+    eof = true;
     return Expect<string>::New(string(""));
   } else {
     return Expect<string>::WithError("unknown error occurred in NonblockingRead");

@@ -19,21 +19,23 @@ ReaderThread::ReaderThread(Pty *pty): m_thread{&ReaderThread::StaticRun, this, p
 
 void ReaderThread::Stop() {
   m_done_flag.set();
+  // Interrupt waiting polls.
+  pthread_kill(m_thread.native_handle(), SIGUSR1);
   m_thread.join();
 }
 
 void ReaderThread::StaticRun(Pty *pty) {
+  bool eof = false;
   while (!m_done_flag.get()) {
-    if (auto e_text = pty->Read()) {
+    if (auto e_text = pty->Read(eof)) {
       if (!e_text->empty()) {
         m_buffer.Append(*e_text);
         // Do a short (0.5ms) sleep to avoid high CPU usage because of short polls.
         usleep(500);
-      } else {
+      } else if (eof) {
         m_done_flag.set();
       }
     } else {
-      auto err = e_text.Error();
       e_text.Error().Extend("reading data from pty").Print();
     }
   }
@@ -50,6 +52,7 @@ int Uterm::Run() {
   constexpr SkScalar kFontSize = SkIntToScalar(16);
 
   signal(SIGCHLD, CatchSigchld);
+  signal(SIGUSR1, [](int sig) {});
 
   const char *shell = getenv("SHELL");
 
