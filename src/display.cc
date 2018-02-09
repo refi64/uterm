@@ -56,7 +56,7 @@ Error Display::Resize(int width, int height) {
 
   UpdatePositions();
 
-  m_attrs.UpdateWith(0, m_text.rows() * m_text.cols(), [](Attr &attr) {
+  m_attrs.UpdateWith(0, rows * cols, [](Attr &attr) {
     attr.dirty = true;
   });
   m_has_updated = true;
@@ -140,6 +140,10 @@ void Display::UpdateGlyphs() {
 
 void Display::UpdateGlyph(int x, int y) {
   int index = m_text.PosToOffset(x, y);
+  if (index >= m_attrs.size()) {
+    return;
+  }
+
   char32_t c = m_text.cell(x, y);
   FontStyle style = AttrsToFontStyle(m_attrs.At(index));
 

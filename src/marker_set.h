@@ -24,6 +24,7 @@ public:
   template <typename F>
   void UpdateWith(size_t index, F func);
 
+  size_t size() { return m_indexes.size(); }
   void Resize(size_t sz);
 
   Span * NextSpan(Span *prev);
@@ -47,7 +48,6 @@ private:
   Marker m_default;
   std::unordered_set<Marker, MarkerHash> m_markers;
   std::vector<Marker*> m_indexes;
-  ;
 };
 
 template <typename Data, typename Hash>
@@ -75,6 +75,9 @@ void MarkerSet<Data, Hash>::Update(size_t begin, size_t end, const Data& data) {
 
 template <typename Data, typename Hash>
 void MarkerSet<Data, Hash>::Update(size_t index, Data data) {
+  if (index + 1 > m_indexes.size()) {
+    return;
+  }
   Update(index, index + 1, data);
 }
 
@@ -93,6 +96,9 @@ void MarkerSet<Data, Hash>::UpdateWith(size_t begin, size_t end, F func) {
 template <typename Data, typename Hash>
 template <typename F>
 void MarkerSet<Data, Hash>::UpdateWith(size_t index, F func) {
+  if (m_indexes.size() == 0) {
+    return;
+  }
   UpdateWith(index, index + 1, func);
 }
 
