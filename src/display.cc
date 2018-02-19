@@ -113,10 +113,11 @@ bool Display::Draw(SkCanvas *canvas) {
 
 void Display::TermDraw(const u32string& str, Pos pos, Attr attr, int width) {
   m_text.set_cell(pos.x, pos.y, str[0] ? str[0] : ' ');
-  UpdateGlyph(pos.x, pos.y);
 
   attr.dirty = true;
   m_attrs.Update(m_text.PosToOffset(pos), attr);
+
+  UpdateGlyph(pos.x, pos.y);
 
   m_has_updated = true;
 }
