@@ -73,8 +73,9 @@ int Uterm::Run() {
   m_term.set_copy_cb(std::bind(&Uterm::HandleCopy, this, _1));
   m_term.set_paste_cb(std::bind(&Uterm::HandlePaste, this));
 
-  m_display.SetPrimaryFont("Roboto Mono");
-  m_display.SetFallbackFont("Noto Sans");
+  m_display.AddFont("Roboto Mono");
+  m_display.AddFont("Hack");
+  m_display.AddFont("Noto Sans");
 
   m_display.SetTextSize(kFontSize);
 

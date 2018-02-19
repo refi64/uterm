@@ -14,8 +14,7 @@ public:
   Display(Terminal *term);
 
   void SetTextSize(int size);
-  void SetPrimaryFont(string name);
-  void SetFallbackFont(string name);
+  void AddFont(string name);
 
   void SetSelection(Selection state, int mx, int my);
   void EndSelection();
@@ -34,7 +33,7 @@ private:
   int m_char_width{-1};
 
   TextManager m_text;
-  GlyphRenderer m_primary, m_fallback;
+  std::vector<GlyphRenderer> m_renderers;
 
   using AttrSet = MarkerSet<Attr, Attr::Hash>;
   AttrSet m_attrs;

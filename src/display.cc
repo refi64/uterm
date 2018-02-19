@@ -12,26 +12,23 @@ Display::Display(Terminal *term): m_term{term}, m_attrs{m_term->default_attr()} 
 }
 
 void Display::SetTextSize(int size) {
-  m_primary.SetTextSize(size);
-  m_fallback.SetTextSize(size);
+  for (auto &renderer : m_renderers) {
+    renderer.SetTextSize(size);
+  }
   UpdateWidth();
   UpdateGlyphs();
 }
 
-void Display::SetPrimaryFont(string name) {
-  m_primary.SetFont(name);
+void Display::AddFont(string name) {
+  m_renderers.emplace_back();
+  m_renderers.back().SetFont(name);
   UpdateWidth();
-  UpdateGlyphs();
-}
-
-void Display::SetFallbackFont(string name) {
-  m_fallback.SetFont(name);
   UpdateGlyphs();
 }
 
 void Display::SetSelection(Selection state, int mx, int my) {
   int x = clamp(mx / m_char_width, 0, m_text.cols() - 1);
-  int y = clamp(my / m_primary.GetHeight(), 0, m_text.rows() - 1);
+  int y = clamp(my / m_renderers[0].GetHeight(), 0, m_text.rows() - 1);
 
   m_term->SetSelection(state, x, y);
 }
@@ -43,13 +40,14 @@ void Display::EndSelection() {
 Error Display::Resize(int width, int height) {
   assert(m_char_width != -1);
 
-  int rows = (height - m_primary.GetBaselineOffset()) / m_primary.GetHeight();
+  int rows = (height - m_renderers[0].GetBaselineOffset()) / m_renderers[0].GetHeight();
   int cols = width / m_char_width;
 
   m_text.Resize(cols, rows);
 
-  m_primary.Resize(rows * cols);
-  m_fallback.Resize(rows * cols);
+  for (auto &renderer : m_renderers) {
+    renderer.Resize(rows * cols);
+  }
   m_attrs.Resize(rows * cols);
 
   auto err = m_term->Resize(cols, rows);
@@ -91,8 +89,9 @@ bool Display::Draw(SkCanvas *canvas) {
   }
 
   for (auto &span : dirty) {
-    m_text.DrawRangeWithRenderer(canvas, &m_primary, span.data, span.begin, span.end);
-    m_text.DrawRangeWithRenderer(canvas, &m_fallback,  span.data, span.begin, span.end);
+    for (auto &renderer : m_renderers) {
+      m_text.DrawRangeWithRenderer(canvas, &renderer, span.data, span.begin, span.end);
+    }
 
     m_attrs.UpdateWith(span.begin, span.end, [](Attr &attr) {
       attr.dirty = false;
@@ -123,12 +122,12 @@ void Display::TermDraw(const u32string& str, Pos pos, Attr attr, int width) {
 }
 
 void Display::UpdateWidth() {
-  m_char_width = m_primary.GetWidth();
+  m_char_width = m_renderers[0].GetWidth();
   UpdatePositions();
 }
 
 void Display::UpdatePositions() {
-  m_text.UpdatePositions(m_primary.GetHeight(), m_char_width);
+  m_text.UpdatePositions(m_renderers[0].GetHeight(), m_char_width);
 }
 
 void Display::UpdateGlyphs() {
@@ -148,10 +147,13 @@ void Display::UpdateGlyph(int x, int y) {
   char32_t c = m_text.cell(x, y);
   FontStyle style = AttrsToFontStyle(m_attrs.At(index));
 
-  if (m_primary.UpdateGlyph(c, index, style)) {
-    m_fallback.ClearGlyph(index);
-  } else {
-    m_fallback.UpdateGlyph(c, index, style);
+  bool found_success = false;
+  for (auto &renderer : m_renderers) {
+    if (found_success) {
+      renderer.ClearGlyph(index);
+    } else {
+      found_success = renderer.UpdateGlyph(c, index, style);
+    }
   }
 }
 
@@ -162,10 +164,10 @@ void Display::HighlightRange(SkCanvas *canvas, Pos begin, Pos end, SkColor color
     int first = y == begin.y ? begin.x : 0,
         last = y == end.y ? end.x : m_text.cols();
     SkRect rect = SkRect::MakeXYWH(m_char_width * first,
-                                   m_primary.GetHeight() * y +
-                                    m_primary.GetBaselineOffset(),
+                                   m_renderers[0].GetHeight() * y +
+                                    m_renderers[0].GetBaselineOffset(),
                                    m_char_width * (last - first),
-                                   m_primary.GetHeight());
+                                   m_renderers[0].GetHeight());
     canvas->save();
     canvas->clipRect(rect, false);
     canvas->clear(color);
