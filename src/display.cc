@@ -153,7 +153,15 @@ void Display::UpdateGlyph(int x, int y) {
       renderer.ClearGlyph(index);
     } else {
       found_success = renderer.UpdateGlyph(c, index, style);
+      if (!found_success) {
+        renderer.ClearGlyph(index);
+      }
     }
+  }
+
+  // Fallback to the first renderer if a glyph cannot be found.
+  if (!found_success) {
+    m_renderers[0].UpdateGlyph(c, index, style);
   }
 }
 
