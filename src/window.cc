@@ -83,7 +83,7 @@ Error Window::Initialize(int width, int height) {
   glClearStencil(0);
   glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-  m_interface.reset(GrGLCreateNativeInterface());
+  m_interface = GrGLMakeNativeInterface();
   m_context = GrContext::MakeGL(m_interface.get());
   if (m_context == nullptr)
     return Error::New("failed to create GrContext");
@@ -191,6 +191,10 @@ void Window::StaticWinResizeCallback(GLFWwindow *glfw_window, int width, int hei
 }
 
 void Window::StaticFbResizeCallback(GLFWwindow *glfw_window, int width, int height) {
+  if (width == 0 || height == 0) {
+    return;
+  }
+
   Window *window = static_cast<Window*>(glfwGetWindowUserPointer(glfw_window));
 
   window->m_fb_width = width;
