@@ -77,6 +77,7 @@ int Uterm::Run() {
   m_display.AddFont("Hack");
   m_display.AddFont("monospace");
   m_display.AddFont("sans-serif");
+  m_display.AddFont("Noto Color Emoji");
 
   m_display.SetTextSize(kFontSize);
 
