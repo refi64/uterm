@@ -1,4 +1,5 @@
 from fbuild.builders.pkg_config import PkgConfig
+from fbuild.builders.platform import guess_platform
 from fbuild.builders import find_program
 from fbuild.builders.cxx import guess as guess_cxx
 from fbuild.builders.c import guess as guess_c
@@ -19,12 +20,17 @@ def arguments(parser):
                        action='store_true', default=True)
     group.add_argument('--release', help='Build in release mode', action='store_true',
                        default=False)
-
+    group.add_argument('--ld',
+                       help='The name of the linker to try to use. Default is ' \
+                             'lld for Clang and gold for other compilers.')
 
 
 @fbuild.db.caches
-def pkg_config(ctx, package, *, name=None, optional=False):
+def pkg_config(ctx, package, *, name=None, optional=False, suffix=''):
     name = name or package
+    if suffix:
+        suffix = ' %s' % suffix
+
     ctx.logger.check('checking for %s' % name)
     try:
         pkg = PkgConfig(ctx, package)
@@ -32,7 +38,7 @@ def pkg_config(ctx, package, *, name=None, optional=False):
     except fbuild.Error:
         ctx.logger.failed()
         if not optional:
-            raise fbuild.Error('%s is required.' % name)
+            raise fbuild.Error('%s is required%s.' % (name, suffix))
     else:
         ctx.logger.passed()
         return rec
@@ -40,17 +46,25 @@ def pkg_config(ctx, package, *, name=None, optional=False):
 
 @fbuild.db.caches
 def configure(ctx):
+    platform = guess_platform(ctx)
+
     posix_flags = ['-Wno-unused-command-line-argument']
     clang_flags = []
     nonclang_flags = []
     kw = {}
 
+    if not platform & {'linux', 'macosx'}:
+        raise fbuild.ConfigFailed('Only Mac and Linux are currently supported.')
+
+    if ctx.options.ld is not None:
+        posix_flags.append('-fuse-ld=%s' % ctx.options.ld)
+    else:
+        clang_flags.append('-fuse-ld=lld')
+        nonclang_flags.append('-fuse-ld=gold')
+
     if ctx.options.release:
         kw['optimize'] = True
         posix_flags.append('-flto')
-        # clang_flags.append('-fuse-ld=lld')
-        posix_flags.append('-fuse-ld=lld')
-        # nonclang_flags.append('-fuse-ld=gold')
     else:
         kw['debug'] = True
         clang_flags.append('-fno-limit-debug-info')
@@ -65,23 +79,26 @@ def configure(ctx):
                        ], **kw)
 
     cxx = guess_cxx.static(ctx, exe=ctx.options.cxx, flags=ctx.options.cxxflag,
-                           includes=['deps/abseil'], platform_options=[
-                                ({'posix'}, {'flags+': ['-std=c++11'] + posix_flags}),
-                                ({'clang'}, {'flags+': clang_flags,
-                                             'macros':
-                                                ['__CLANG_SUPPORT_DYN_ANNOTATION__']}),
-                                # ({'!clang'}, {'flags+': nonclang_flags}),
+                           platform_options=[
+                            ({'posix'}, {'flags+': ['-std=c++11'] + posix_flags}),
+                            ({'clang'}, {'flags+': clang_flags,
+                                         'macros':
+                                            ['__CLANG_SUPPORT_DYN_ANNOTATION__']}),
+                            ({'!clang'}, {'flags+': nonclang_flags}),
                            ], **kw)
 
     xkbcommon = pkg_config(ctx, 'xkbcommon', optional=True)
     glfw = pkg_config(ctx, 'glfw3', name='GLFW3')
-    gl = pkg_config(ctx, 'gl', name='OpenGL')
     egl = pkg_config(ctx, 'egl', name='EGL')
-    freetype = pkg_config(ctx, 'freetype2')
-    fontconfig = pkg_config(ctx, 'fontconfig')
 
-    return Record(c=c, cxx=cxx, xkbcommon=xkbcommon, glfw=glfw, gl=gl, egl=egl,
-                  freetype=freetype, fontconfig=fontconfig)
+    if platform & {'linux'}:
+        freetype = pkg_config(ctx, 'freetype2')
+        fontconfig = pkg_config(ctx, 'fontconfig')
+    else:
+        freetype = fontconfig = None
+
+    return Record(platform=platform, c=c, cxx=cxx, xkbcommon=xkbcommon, glfw=glfw,
+                  egl=egl, freetype=freetype, fontconfig=fontconfig)
 
 
 def prefixed_sources(prefix, paths, glob=False, ignore=None):
@@ -106,23 +123,27 @@ def abseil_sources(*globs):
 
 
 def build_abseil(ctx, cxx):
-    abseil = Record()
+    abseil = Record(includes=['deps/abseil'])
 
     abseil.base = cxx.build_lib('abseil_base',
                                 abseil_sources('base/*.cc', 'base/internal/*.cc'),
+                                includes=abseil.includes,
                                 include_source_dirs=False)
 
     abseil.numeric = cxx.build_lib('abseil_numeric', abseil_sources('numeric/int128.cc'),
+                                   includes=abseil.includes,
                                    libs=[abseil.base])
 
     abseil.strings = cxx.build_lib('abseil_strings',
                                    abseil_sources('strings/*.cc',
                                                   'strings/internal/*.cc'),
+                                   includes=abseil.includes,
                                    libs=[abseil.base, abseil.numeric])
 
     abseil.stacktrace = cxx.build_lib('abseil_stacktrace',
                                       abseil_sources('debugging/stacktrace.cc',
-                                                     'debugging/internal/*.cc'))
+                                                     'debugging/internal/*.cc'),
+                                      includes=abseil.includes)
 
     return abseil
 
@@ -144,17 +165,16 @@ def generate_gl3w(ctx):
     return outdir / 'include', outdir / 'src' / 'gl3w.c'
 
 
-def build_gl3w(ctx, cxx):
+def build_gl3w(ctx, c):
     include, src = generate_gl3w(ctx)
-    return Record(includes=[include], lib=cxx.build_lib('gl3w', [src],
-                                                        includes=[include]))
+    return Record(includes=[include], lib=c.build_lib('gl3w', [src], includes=[include]))
 
 
 def skia_sources(*globs):
     return prefixed_sources('deps/skia/src', globs)
 
 
-def build_skia(ctx, cxx, freetype, fontconfig):
+def build_skia(ctx, platform, cxx, freetype, fontconfig):
     srcs = [
         # core
         'c/sk_paint.cpp',
@@ -439,7 +459,6 @@ def build_skia(ctx, cxx, freetype, fontconfig):
         'utils/SkShadowUtils.cpp',
         'utils/SkTextBox.cpp',
         'utils/SkThreadUtils_pthread.cpp',
-        # 'utils/SkThreadUtils_win.cpp',
         'utils/SkWhitelistTypefaces.cpp',
 
         # xps
@@ -447,10 +466,6 @@ def build_skia(ctx, cxx, freetype, fontconfig):
         'xps/SkXPSDevice.cpp',
 
         # others
-        # 'android/SkAndroidFrameworkUtils.cpp',
-        # 'android/SkBitmapRegionCodec.cpp',
-        # 'android/SkBitmapRegionDecoder.cpp',
-        # 'codec/SkAndroidCodec.cpp',
         'codec/SkBmpBaseCodec.cpp',
         'codec/SkBmpCodec.cpp',
         'codec/SkBmpMaskCodec.cpp',
@@ -475,7 +490,6 @@ def build_skia(ctx, cxx, freetype, fontconfig):
         'ports/SkTLS_pthread.cpp',
         'sfnt/SkOTTable_name.cpp',
         'sfnt/SkOTUtils.cpp',
-        # 'utils/mac/SkStream_mac.cpp',
         'ports/SkDebug_stdio.cpp',
 
         # opts
@@ -496,14 +510,6 @@ def build_skia(ctx, cxx, freetype, fontconfig):
 
         # effects
         'ports/SkGlobalInitialization_none.cpp',
-
-        # fontmgr_fontconfig
-        'ports/SkFontConfigInterface.cpp',
-        'ports/SkFontConfigInterface_direct.cpp',
-        'ports/SkFontConfigInterface_direct_factory.cpp',
-        'ports/SkFontMgr_FontConfigInterface.cpp',
-        'ports/SkFontMgr_fontconfig.cpp',
-        'ports/SkFontMgr_fontconfig_factory.cpp',
 
         # gpu
         'gpu/GrAuditTrail.cpp',
@@ -711,8 +717,6 @@ def build_skia(ctx, cxx, freetype, fontconfig):
         'gpu/gl/builders/GrGLProgramBuilder.cpp',
         'gpu/gl/builders/GrGLShaderStringBuilder.cpp',
 
-        'gpu/gl/egl/GrGLMakeNativeInterface_egl.cpp',
-
         'gpu/glsl/GrGLSL.cpp',
         'gpu/glsl/GrGLSLBlend.cpp',
         'gpu/glsl/GrGLSLFragmentProcessor.cpp',
@@ -754,11 +758,42 @@ def build_skia(ctx, cxx, freetype, fontconfig):
         'sksl/ir/SkSLSymbolTable.cpp',
         'sksl/ir/SkSLSetting.cpp',
         'sksl/ir/SkSLType.cpp',
-
-        # freetype
-        'ports/SkFontHost_FreeType.cpp',
-        'ports/SkFontHost_FreeType_common.cpp',
     ]
+
+    if platform & {'linux'}:
+        cflags = fontconfig.cflags + freetype.cflags
+        ldlibs = fontconfig.ldlibs + freetype.ldlibs
+
+        srcs.extend([
+            # gpu
+            'gpu/gl/egl/GrGLMakeNativeInterface_egl.cpp',
+
+            # fontmgr_fontconfig
+            'ports/SkFontConfigInterface.cpp',
+            'ports/SkFontConfigInterface_direct.cpp',
+            'ports/SkFontConfigInterface_direct_factory.cpp',
+            'ports/SkFontMgr_FontConfigInterface.cpp',
+            'ports/SkFontMgr_fontconfig.cpp',
+            'ports/SkFontMgr_fontconfig_factory.cpp',
+
+            # freetype
+            'ports/SkFontHost_FreeType.cpp',
+            'ports/SkFontHost_FreeType_common.cpp',
+        ])
+    elif platform & {'macosx'}:
+        cflags = ldlibs = []
+
+        srcs.extend([
+            # utils
+            'utils/mac/SkCreateCGImageRef.cpp',
+            'utils/mac/SkStream_mac.cpp',
+
+            # gpu
+            'gpu/gl/mac/GrGLMakeNativeInterface_mac.cpp',
+
+            # fonts
+            'ports/SkFontHost_mac.cpp',
+        ])
 
     sources = skia_sources(*srcs)
     sources.append('deps/skia/third_party/gif/SkGifImageReader.cpp')
@@ -766,9 +801,9 @@ def build_skia(ctx, cxx, freetype, fontconfig):
     public_includes = Path.glob('deps/skia/include/*')
     lib = cxx.build_lib('skia', sources, macros=['SK_ENABLE_DISCRETE_GPU'],
                         includes=Path.glob('deps/skia/src/*') + public_includes + \
-                                 ['deps/skia/third_party/gif'],
-                        cflags=fontconfig.cflags + freetype.cflags)
-    return Record(includes=public_includes+['deps/skia/src/gpu'], lib=lib)
+                                 ['deps/skia/third_party/gif'], cflags=cflags)
+    return Record(includes=public_includes + ['deps/skia/src/gpu'], lib=lib,
+                  ldlibs=ldlibs)
 
 
 def build_fmtlib(ctx, cxx):
@@ -803,21 +838,20 @@ def build_libtsm(ctx, c, xkbcommon):
 def build(ctx):
     rec = configure(ctx)
 
-    gl3w = build_gl3w(ctx, rec.cxx)
+    gl3w = build_gl3w(ctx, rec.c)
     abseil = build_abseil(ctx, rec.cxx)
-    skia = build_skia(ctx, rec.cxx, rec.freetype, rec.fontconfig)
+    skia = build_skia(ctx, rec.platform, rec.cxx, rec.freetype, rec.fontconfig)
     fmt = build_fmtlib(ctx, rec.cxx)
     tsm = build_libtsm(ctx, rec.c, rec.xkbcommon)
 
     rec.cxx.build_exe('uterm', Path.glob('src/*.cc'),
-                      includes=gl3w.includes + skia.includes + fmt.includes +
-                               tsm.includes +
+                      includes=abseil.includes + gl3w.includes + skia.includes +
+                               fmt.includes + tsm.includes +
                                ['deps/utfcpp/source', 'deps/concurrentqueue'],
                       libs=[abseil.base, abseil.strings, abseil.stacktrace, gl3w.lib,
                             skia.lib, fmt.lib, tsm.lib],
                       macros=['UTERM_BLACK_SCREEN_WORKAROUND'],
                       external_libs=['dl', 'pthread'],
                       lflags=['-fuse-ld=lld'],
-                      cflags=rec.glfw.cflags + rec.gl.cflags + rec.egl.cflags,
-                      ldlibs=rec.glfw.ldlibs + rec.gl.ldlibs + rec.egl.ldlibs +
-                             rec.freetype.ldlibs + rec.fontconfig.ldlibs)
+                      cflags=rec.glfw.cflags + rec.egl.cflags,
+                      ldlibs=rec.glfw.ldlibs + rec.egl.ldlibs + skia.ldlibs)
