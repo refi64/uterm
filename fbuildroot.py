@@ -1,6 +1,7 @@
 from fbuild.builders.pkg_config import PkgConfig
 from fbuild.builders import find_program
-from fbuild.builders.cxx import guess
+from fbuild.builders.cxx import guess as guess_cxx
+from fbuild.builders.c import guess as guess_c
 from fbuild.record import Record
 from fbuild.path import Path
 import fbuild.db
@@ -8,6 +9,9 @@ import fbuild.db
 
 def arguments(parser):
     group = parser.add_argument_group('config options')
+    group.add_argument('--cc', help='Use the given C compiler')
+    group.add_argument('--cflag', help='Pass the given flag to the C compiler',
+                       action='append', default=[])
     group.add_argument('--cxx', help='Use the given C++ compiler')
     group.add_argument('--cxxflag', help='Pass the given flag to the C++ compiler',
                        action='append', default=[])
@@ -18,7 +22,7 @@ def arguments(parser):
 
 
 def configure(ctx):
-    posix_flags = ['-std=c++11', '-Wno-unused-command-line-argument']
+    posix_flags = ['-Wno-unused-command-line-argument']
     clang_flags = []
     nonclang_flags = []
     kw = {}
@@ -36,15 +40,18 @@ def configure(ctx):
     if ctx.options.use_color:
         posix_flags.append('-fdiagnostics-color')
 
-    cxx = guess.static(ctx, exe=ctx.options.cxx, flags=ctx.options.cxxflag,
-                       includes=['deps/abseil'], platform_options=[
-                          ({'posix'}, {'flags+': posix_flags}),
-                          ({'clang'}, {'flags+': clang_flags,
-                                       'macros': ['__CLANG_SUPPORT_DYN_ANNOTATION__']}),
-                          # ({'!clang'}, {'flags+': nonclang_flags}),
-                       ], **kw)
+    c = guess_c.static(ctx, exe=ctx.options.cc, flags=ctx.options.cflag, **kw)
 
-    return Record(cxx=cxx)
+    cxx = guess_cxx.static(ctx, exe=ctx.options.cxx, flags=ctx.options.cxxflag,
+                           includes=['deps/abseil'], platform_options=[
+                                ({'posix'}, {'flags+': ['-std=c++11'] + posix_flags}),
+                                ({'clang'}, {'flags+': clang_flags,
+                                             'macros':
+                                                ['__CLANG_SUPPORT_DYN_ANNOTATION__']}),
+                                # ({'!clang'}, {'flags+': nonclang_flags}),
+                           ], **kw)
+
+    return Record(c=c, cxx=cxx)
 
 
 def prefixed_sources(prefix, paths, glob=False, ignore=None):
@@ -744,9 +751,22 @@ def build_skia(ctx, cxx):
 
 
 def build_fmtlib(ctx, cxx):
-  fmt = Path('deps/fmt')
-  return Record(includes=[fmt], lib=cxx.build_lib('fmt', [fmt / 'fmt' / 'format.cc'],
-                                                  include_source_dirs=False))
+    fmt = Path('deps/fmt')
+    return Record(includes=[fmt], lib=cxx.build_lib('fmt', [fmt / 'fmt' / 'format.cc'],
+                                                    include_source_dirs=False))
+
+
+def build_libtsm(ctx, c):
+    base = Path('deps/libtsm')
+    src = base / 'src'
+    shl = src / 'shared'
+    tsm = src / 'tsm'
+
+    includes = [shl, tsm, base]
+    sources = Path.glob(tsm / '*.c') + Path.glob(shl / '*.c') + \
+              [base / 'external' / 'wcwidth.c']
+
+    return Record(includes=includes, lib=c.build_lib('tsm', sources, includes=includes))
 
 
 def build(ctx):
@@ -756,12 +776,14 @@ def build(ctx):
     abseil = build_abseil(ctx, rec.cxx)
     skia = build_skia(ctx, rec.cxx)
     fmt = build_fmtlib(ctx, rec.cxx)
+    tsm = build_libtsm(ctx, rec.c)
 
     rec.cxx.build_exe('uterm', Path.glob('src/*.cc'),
-                      includes=gl3w.includes + skia.includes + fmt.includes + \
+                      includes=gl3w.includes + skia.includes + fmt.includes +
+                               tsm.includes +
                                ['deps/utfcpp/source', 'deps/concurrentqueue'],
                       libs=[abseil.base, abseil.strings, abseil.stacktrace, gl3w.lib,
-                            skia.lib, fmt.lib],
+                            skia.lib, fmt.lib, tsm.lib],
                       macros=['UTERM_BLACK_SCREEN_WORKAROUND'],
-                      external_libs=['glfw', 'GL', 'tsm', 'X11', 'EGL', 'dl', 'pthread', 'profiler'],
+                      external_libs=['glfw', 'GL', 'X11', 'EGL', 'dl', 'pthread', 'profiler'],
                       lflags=['-fuse-ld=lld'])

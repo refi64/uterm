@@ -13,3 +13,6 @@
 [submodule "deps/utfcpp"]
 	path = deps/utfcpp
 	url = https://github.com/nemtrif/utfcpp.git
+[submodule "deps/libtsm"]
+	path = deps/libtsm
+	url = https://github.com/Aetf/libtsm

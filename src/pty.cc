@@ -30,6 +30,7 @@ static Error ChildSpawnTerm(const std::vector<string>& command, int slave) {
   FdWrapper w_slave{slave};
 
   setenv("TERM", "xterm-256color", 1);
+  setenv("COLORTERM", "truecolor", 1);
 
   close(0);
   close(1);
