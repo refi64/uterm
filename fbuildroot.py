@@ -709,11 +709,6 @@ def build_skia(ctx, cxx):
         'image/SkImage_Gpu.cpp',
         'image/SkSurface_Gpu.cpp',
 
-        # atlas_text
-        # 'atlastext/SkAtlasTextContext.cpp',
-        # 'atlastext/SkAtlasTextTarget.cpp',
-        # 'atlastext/SkInternalAtlasTextContext.cpp',
-
         # sksl
         'sksl/SkSLCFGGenerator.cpp',
         'sksl/SkSLCompiler.cpp',
