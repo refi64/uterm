@@ -21,6 +21,24 @@ def arguments(parser):
                        default=False)
 
 
+
+@fbuild.db.caches
+def pkg_config(ctx, package, *, name=None, optional=False):
+    name = name or package
+    ctx.logger.check('checking for %s' % name)
+    try:
+        pkg = PkgConfig(ctx, package)
+        rec = Record(cflags=pkg.cflags(), ldlibs=pkg.libs())
+    except fbuild.Error:
+        ctx.logger.failed()
+        if not optional:
+            raise fbuild.Error('%s is required.' % name)
+    else:
+        ctx.logger.passed()
+        return rec
+
+
+@fbuild.db.caches
 def configure(ctx):
     posix_flags = ['-Wno-unused-command-line-argument']
     clang_flags = []
@@ -55,7 +73,15 @@ def configure(ctx):
                                 # ({'!clang'}, {'flags+': nonclang_flags}),
                            ], **kw)
 
-    return Record(c=c, cxx=cxx)
+    xkbcommon = pkg_config(ctx, 'xkbcommon', optional=True)
+    glfw = pkg_config(ctx, 'glfw3', name='GLFW3')
+    gl = pkg_config(ctx, 'gl', name='OpenGL')
+    egl = pkg_config(ctx, 'egl', name='EGL')
+    freetype = pkg_config(ctx, 'freetype2')
+    fontconfig = pkg_config(ctx, 'fontconfig')
+
+    return Record(c=c, cxx=cxx, xkbcommon=xkbcommon, glfw=glfw, gl=gl, egl=egl,
+                  freetype=freetype, fontconfig=fontconfig)
 
 
 def prefixed_sources(prefix, paths, glob=False, ignore=None):
@@ -128,16 +154,7 @@ def skia_sources(*globs):
     return prefixed_sources('deps/skia/src', globs)
 
 
-def build_skia(ctx, cxx):
-    pkgs = ['freetype2', 'fontconfig']
-    cflags = []
-    # XXX
-    libs = ['freetype', 'fontconfig']
-
-    for pkg in pkgs:
-        pkgconfig = PkgConfig(ctx, pkg)
-        cflags.extend(pkgconfig.cflags())
-
+def build_skia(ctx, cxx, freetype, fontconfig):
     srcs = [
         # core
         'c/sk_paint.cpp',
@@ -750,7 +767,7 @@ def build_skia(ctx, cxx):
     lib = cxx.build_lib('skia', sources, macros=['SK_ENABLE_DISCRETE_GPU'],
                         includes=Path.glob('deps/skia/src/*') + public_includes + \
                                  ['deps/skia/third_party/gif'],
-                        cflags=cflags, external_libs=libs)
+                        cflags=fontconfig.cflags + freetype.cflags)
     return Record(includes=public_includes+['deps/skia/src/gpu'], lib=lib)
 
 
@@ -760,22 +777,27 @@ def build_fmtlib(ctx, cxx):
                                                     include_source_dirs=False))
 
 
-def build_libtsm(ctx, c):
+def build_libtsm(ctx, c, xkbcommon):
     base = Path('deps/libtsm')
     src = base / 'src'
     shl = src / 'shared'
     tsm = src / 'tsm'
 
-    includes = [shl, tsm, base]
     sources = Path.glob(tsm / '*.c') + Path.glob(shl / '*.c') + \
               [base / 'external' / 'wcwidth.c']
+    includes = [shl, tsm, base]
+
+    if xkbcommon is not None:
+        cflags = xkbcommon.cflags
+    else:
+        cflags = []
 
     macros = ['_GNU_SOURCE=1']
     if not ctx.options.release:
         macros.append('BUILD_ENABLE_DEBUG')
 
     return Record(includes=includes, lib=c.build_lib('tsm', sources, includes=includes,
-                                                     macros=macros))
+                                                     macros=macros, cflags=cflags))
 
 
 def build(ctx):
@@ -783,9 +805,9 @@ def build(ctx):
 
     gl3w = build_gl3w(ctx, rec.cxx)
     abseil = build_abseil(ctx, rec.cxx)
-    skia = build_skia(ctx, rec.cxx)
+    skia = build_skia(ctx, rec.cxx, rec.freetype, rec.fontconfig)
     fmt = build_fmtlib(ctx, rec.cxx)
-    tsm = build_libtsm(ctx, rec.c)
+    tsm = build_libtsm(ctx, rec.c, rec.xkbcommon)
 
     rec.cxx.build_exe('uterm', Path.glob('src/*.cc'),
                       includes=gl3w.includes + skia.includes + fmt.includes +
@@ -794,5 +816,8 @@ def build(ctx):
                       libs=[abseil.base, abseil.strings, abseil.stacktrace, gl3w.lib,
                             skia.lib, fmt.lib, tsm.lib],
                       macros=['UTERM_BLACK_SCREEN_WORKAROUND'],
-                      external_libs=['glfw', 'GL', 'X11', 'EGL', 'dl', 'pthread', 'profiler'],
-                      lflags=['-fuse-ld=lld'])
+                      external_libs=['dl', 'pthread'],
+                      lflags=['-fuse-ld=lld'],
+                      cflags=rec.glfw.cflags + rec.gl.cflags + rec.egl.cflags,
+                      ldlibs=rec.glfw.ldlibs + rec.gl.ldlibs + rec.egl.ldlibs +
+                             rec.freetype.ldlibs + rec.fontconfig.ldlibs)
