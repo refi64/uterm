@@ -23,6 +23,8 @@ Terminal::Terminal() {
   ResetSelection();
 }
 
+void Terminal::set_theme(const Theme& theme) { m_theme = &theme; }
+
 void Terminal::set_draw_cb(DrawCb draw_cb) { m_draw_cb = draw_cb; }
 void Terminal::set_copy_cb(CopyCb copy_cb) { m_copy_cb = copy_cb; }
 void Terminal::set_paste_cb(PasteCb paste_cb) { m_paste_cb = paste_cb; }
@@ -146,8 +148,8 @@ void Terminal::StaticWrite(tsm_vte *vte, const char *u8, size_t len, void *data)
   }
 }
 
-static SkColor TsmAttrColorCodeToSkColor(int code) {
-  return kDefaultTheme[std::min(code, Colors::kMax)];
+static SkColor TsmAttrColorCodeToSkColor(const Theme& theme, int code) {
+  return theme[std::min(code, Colors::kMax)];
 }
 
 int Terminal::StaticDraw(tsm_screen *screen, uint32 id, const uint32 *chars, size_t len,
@@ -167,12 +169,12 @@ int Terminal::StaticDraw(tsm_screen *screen, uint32 id, const uint32 *chars, siz
   Attr attr;
 
   if (tattr->fccode >= 0) {
-    attr.foreground = TsmAttrColorCodeToSkColor(tattr->fccode);
+    attr.foreground = TsmAttrColorCodeToSkColor(*term->m_theme, tattr->fccode);
   } else {
     attr.foreground = SkColorSetRGB(tattr->fr, tattr->fg, tattr->fb);
   }
   if (tattr->bccode >= 0) {
-    attr.background = TsmAttrColorCodeToSkColor(tattr->bccode);
+    attr.background = TsmAttrColorCodeToSkColor(*term->m_theme, tattr->bccode);
   } else {
     attr.background = SkColorSetRGB(tattr->br, tattr->bg, tattr->bb);
   }

@@ -28,7 +28,9 @@ bool Window::isopen() {
   return !glfwWindowShouldClose(m_window);
 }
 
-Error Window::Initialize(int width, int height) {
+Error Window::Initialize(int width, int height, const Theme& theme) {
+  m_theme = &theme;
+
   glfwSetErrorCallback([](int ec, const char *err) {
     fmt::print("GLFW error: {}\n", err);
   });
@@ -160,7 +162,7 @@ Error Window::CreateSurface() {
   if (m_surface == nullptr)
     return Error::New("failed to create SkSurface");
 
-  canvas()->clear(kDefaultTheme[Colors::kBackground]);
+  canvas()->clear((*m_theme)[Colors::kBackground]);
   return Error::New();
 }
 

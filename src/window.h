@@ -2,6 +2,7 @@
 
 #include "base.h"
 #include "error.h"
+#include "attrs.h"
 
 #include <GL/gl3w.h>
 #include <GLFW/glfw3.h>
@@ -30,13 +31,15 @@ public:
   void set_selection_cb(SelectionCb selection_cb);
   void set_scroll_cb(ScrollCb scroll_cb);
 
-  Error Initialize(int width, int height);
+  Error Initialize(int width, int height, const Theme& theme);
   bool isopen();
   SkCanvas * canvas() { return m_surface->getCanvas(); }
   string ClipboardRead();
   void ClipboardWrite(const string &str);
   void DrawAndPoll(bool significant_redraw);
 private:
+  const Theme *m_theme{nullptr};
+
   KeyCb m_key_cb;
   CharCb m_char_cb;
   ResizeCb m_resize_cb;

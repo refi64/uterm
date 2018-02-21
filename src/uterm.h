@@ -3,6 +3,7 @@
 #include "window.h"
 #include "terminal.h"
 #include "display.h"
+#include "config.h"
 
 #include <atomic>
 #include <thread>
@@ -53,6 +54,7 @@ private:
   void HandleSelection(Selection state, double mx, double my);
   void HandleScroll(ScrollDirection direction, uint distance);
 
+  Config m_config;
   Terminal m_term;
   Display m_display{&m_term};
   Window m_window;

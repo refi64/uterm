@@ -33,6 +33,7 @@ public:
   using CopyCb = std::function<void(const string&)>;
   using PasteCb = std::function<string()>;
 
+  void set_theme(const Theme& theme);
   void set_draw_cb(DrawCb draw_cb);
   void set_copy_cb(CopyCb copy_cb);
   void set_paste_cb(PasteCb paste_cb);
@@ -57,6 +58,8 @@ private:
   static int StaticDraw(tsm_screen *screen, uint32 id, const uint32 *chars, size_t len,
                         uint width, uint posx, uint posy, const tsm_screen_attr *tattr,
                         tsm_age_t age, void *data);
+
+  const Theme *m_theme{nullptr};
 
   DrawCb m_draw_cb;
   CopyCb m_copy_cb;

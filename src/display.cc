@@ -11,14 +11,10 @@ Display::Display(Terminal *term): m_term{term}, m_attrs{m_term->default_attr()} 
   m_term->set_draw_cb(std::bind(&Display::TermDraw, this, _1, _2, _3, _4));
 }
 
-void Display::SetTextSize(int size) {
-  m_text_size = size;
-}
-
 void Display::AddFont(string name, int size) {
   m_renderers.emplace_back();
   m_renderers.back().SetFont(name);
-  m_renderers.back().SetTextSize(size == -1 ? m_text_size : size);
+  m_renderers.back().SetTextSize(size);
 
   UpdateWidth();
   UpdateGlyphs();

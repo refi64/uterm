@@ -48,37 +48,39 @@ static void CatchSigchld(int sig) {
 int Uterm::Run() {
   using namespace std::placeholders;
 
+  if (auto err = m_config.Parse()) {
+    err.Extend("while parsing config file").Print();
+  }
+
   constexpr int kWidth = 800, kHeight = 600;
-  constexpr int kFontSize = 16;
 
   signal(SIGCHLD, CatchSigchld);
   signal(SIGUSR1, [](int sig) {});
 
-  const char *shell = getenv("SHELL");
-
   Pty pty;
-  if (auto err = pty.Spawn({shell ? shell : "/bin/sh", "-i"})) {
+  if (auto err = pty.Spawn({m_config.shell(), "-i"})) {
     err.Extend("while initializing pty").Print();
     return 1;
   }
 
   ReaderThread reader{&pty};
 
-  if (auto err = m_window.Initialize(kWidth, kHeight)) {
+  if (auto err = m_window.Initialize(kWidth, kHeight, m_config.theme())) {
     err.Extend("while initializing window").Print();
     return 1;
   }
+
+  m_term.set_theme(m_config.theme());
 
   m_term.set_pty(&pty);
   m_term.set_copy_cb(std::bind(&Uterm::HandleCopy, this, _1));
   m_term.set_paste_cb(std::bind(&Uterm::HandlePaste, this));
 
-  m_display.SetTextSize(kFontSize);
+  for (auto &font : m_config.fonts()) {
+    m_display.AddFont(font.name, font.size);
+  }
 
-  m_display.AddFont("Roboto Mono");
-  m_display.AddFont("Hack");
-  m_display.AddFont("monospace");
-  m_display.AddFont("sans-serif");
+  m_display.AddFont("monospace", m_config.font_defaults_size());
 
   HandleResize(kWidth, kHeight);
 

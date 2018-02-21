@@ -84,9 +84,11 @@ Expect<T>::operator bool() {
 template <typename T>
 Error Expect<T>::Error() {
   ::Error* ptr = absl::any_cast<::Error>(&m_value);
-  assert(ptr != nullptr);
-  ::Error res{std::move(*ptr)};
+  if (ptr == nullptr) {
+    return Error::New();
+  }
 
+  ::Error res{std::move(*ptr)};
   m_value.reset();
   return res;
 }

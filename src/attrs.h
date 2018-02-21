@@ -23,7 +23,9 @@ namespace Colors {
                 kMax = 17;
 }
 
-static const std::array<SkColor, Colors::kMax + 1> kDefaultTheme{
+using Theme = std::array<SkColor, Colors::kMax + 1>;
+
+static constexpr Theme kDefaultTheme{
   SkColorSetRGB(0x00, 0x00, 0x00),  // kBlack
   SkColorSetRGB(0xcd, 0x00, 0x00),  // kRed
   SkColorSetRGB(0x00, 0xcd, 0x00),  // kGreen

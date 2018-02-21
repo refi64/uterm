@@ -13,8 +13,7 @@ class Display {
 public:
   Display(Terminal *term);
 
-  void SetTextSize(int size);
-  void AddFont(string name, int size = -1);
+  void AddFont(string name, int size);
 
   void SetSelection(Selection state, int mx, int my);
   void EndSelection();
@@ -28,8 +27,6 @@ private:
   void UpdateGlyphs();
   void UpdateGlyph(int x, int y);
   void HighlightRange(SkCanvas *canvas, Pos begin, Pos end, SkColor color);
-
-  int m_text_size{12};
 
   Terminal *m_term;
   int m_char_width{-1};

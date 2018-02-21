@@ -90,6 +90,7 @@ def configure(ctx):
     xkbcommon = pkg_config(ctx, 'xkbcommon', optional=True)
     glfw = pkg_config(ctx, 'glfw3', name='GLFW3')
     egl = pkg_config(ctx, 'egl', name='EGL')
+    confuse = pkg_config(ctx, 'libconfuse')
 
     if platform & {'linux'}:
         freetype = pkg_config(ctx, 'freetype2')
@@ -98,7 +99,7 @@ def configure(ctx):
         freetype = fontconfig = None
 
     return Record(platform=platform, c=c, cxx=cxx, xkbcommon=xkbcommon, glfw=glfw,
-                  egl=egl, freetype=freetype, fontconfig=fontconfig)
+                  egl=egl, confuse=confuse, freetype=freetype, fontconfig=fontconfig)
 
 
 def prefixed_sources(prefix, paths, glob=False, ignore=None):
@@ -853,5 +854,6 @@ def build(ctx):
                       macros=['UTERM_BLACK_SCREEN_WORKAROUND'],
                       external_libs=['dl', 'pthread'],
                       lflags=['-fuse-ld=lld'],
-                      cflags=rec.glfw.cflags + rec.egl.cflags,
-                      ldlibs=rec.glfw.ldlibs + rec.egl.ldlibs + skia.ldlibs)
+                      cflags=rec.glfw.cflags + rec.egl.cflags + rec.confuse.cflags,
+                      ldlibs=rec.glfw.ldlibs + rec.egl.ldlibs + rec.confuse.ldlibs +
+                             skia.ldlibs)
