@@ -76,8 +76,9 @@ int GlyphRenderer::GetWidth() {
   }
 
   SkRect bounds;
-  u32string s{'x'};
-  m_styled_fonts[kStyleNormal].paint.measureText(s.c_str(), sizeof(s[0]), &bounds);
+  const char *s = "x";
+  m_styled_fonts[kStyleNormal].paint.setTextEncoding(SkPaint::kUTF8_TextEncoding);
+  m_styled_fonts[kStyleNormal].paint.measureText(s, sizeof(s[0]), &bounds);
   return bounds.width();
 }
 
