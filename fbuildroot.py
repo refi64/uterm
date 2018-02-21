@@ -40,7 +40,11 @@ def configure(ctx):
     if ctx.options.use_color:
         posix_flags.append('-fdiagnostics-color')
 
-    c = guess_c.static(ctx, exe=ctx.options.cc, flags=ctx.options.cflag, **kw)
+    c = guess_c.static(ctx, exe=ctx.options.cc, flags=ctx.options.cflag,
+                       platform_options=[
+                            ({'posix'}, {'flags+': posix_flags}),
+                            ({'clang'}, {'flags+': clang_flags}),
+                       ], **kw)
 
     cxx = guess_cxx.static(ctx, exe=ctx.options.cxx, flags=ctx.options.cxxflag,
                            includes=['deps/abseil'], platform_options=[
@@ -766,7 +770,12 @@ def build_libtsm(ctx, c):
     sources = Path.glob(tsm / '*.c') + Path.glob(shl / '*.c') + \
               [base / 'external' / 'wcwidth.c']
 
-    return Record(includes=includes, lib=c.build_lib('tsm', sources, includes=includes))
+    macros = ['_GNU_SOURCE=1']
+    if not ctx.options.release:
+        macros.append('BUILD_ENABLE_DEBUG')
+
+    return Record(includes=includes, lib=c.build_lib('tsm', sources, includes=includes,
+                                                     macros=macros))
 
 
 def build(ctx):
