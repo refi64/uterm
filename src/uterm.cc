@@ -49,7 +49,7 @@ int Uterm::Run() {
   using namespace std::placeholders;
 
   constexpr int kWidth = 800, kHeight = 600;
-  constexpr SkScalar kFontSize = SkIntToScalar(16);
+  constexpr int kFontSize = 16;
 
   signal(SIGCHLD, CatchSigchld);
   signal(SIGUSR1, [](int sig) {});
@@ -73,13 +73,12 @@ int Uterm::Run() {
   m_term.set_copy_cb(std::bind(&Uterm::HandleCopy, this, _1));
   m_term.set_paste_cb(std::bind(&Uterm::HandlePaste, this));
 
+  m_display.SetTextSize(kFontSize);
+
   m_display.AddFont("Roboto Mono");
   m_display.AddFont("Hack");
   m_display.AddFont("monospace");
   m_display.AddFont("sans-serif");
-  m_display.AddFont("Noto Color Emoji");
-
-  m_display.SetTextSize(kFontSize);
 
   HandleResize(kWidth, kHeight);
 

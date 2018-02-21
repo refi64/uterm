@@ -12,16 +12,14 @@ Display::Display(Terminal *term): m_term{term}, m_attrs{m_term->default_attr()} 
 }
 
 void Display::SetTextSize(int size) {
-  for (auto &renderer : m_renderers) {
-    renderer.SetTextSize(size);
-  }
-  UpdateWidth();
-  UpdateGlyphs();
+  m_text_size = size;
 }
 
-void Display::AddFont(string name) {
+void Display::AddFont(string name, int size) {
   m_renderers.emplace_back();
   m_renderers.back().SetFont(name);
+  m_renderers.back().SetTextSize(size == -1 ? m_text_size : size);
+
   UpdateWidth();
   UpdateGlyphs();
 }
