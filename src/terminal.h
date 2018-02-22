@@ -32,11 +32,13 @@ public:
   using DrawCb = std::function<void(const u32string&, Pos, Attr, int)>;
   using CopyCb = std::function<void(const string&)>;
   using PasteCb = std::function<string()>;
+  using TitleCb = std::function<void(const string&)>;
 
   void set_theme(const Theme& theme);
   void set_draw_cb(DrawCb draw_cb);
   void set_copy_cb(CopyCb copy_cb);
   void set_paste_cb(PasteCb paste_cb);
+  void set_title_cb(TitleCb title_cb);
   void set_pty(Pty* pty);
 
   Pos cursor();
@@ -54,16 +56,18 @@ public:
   bool WriteUnicodeToPty(uint32 code);
   void Draw();
 private:
-  static void StaticWrite(tsm_vte *vte, const char *u8, size_t len, void *data);
   static int StaticDraw(tsm_screen *screen, uint32 id, const uint32 *chars, size_t len,
                         uint width, uint posx, uint posy, const tsm_screen_attr *tattr,
                         tsm_age_t age, void *data);
+  static void StaticWrite(tsm_vte *vte, const char *u8, size_t len, void *data);
+  static void StaticOsc(tsm_vte *vte, const char *u8, size_t len, void *data);
 
   const Theme *m_theme{nullptr};
 
   DrawCb m_draw_cb;
   CopyCb m_copy_cb;
   PasteCb m_paste_cb;
+  TitleCb m_title_cb;
 
   tsm_screen *m_screen;
   tsm_vte *m_vte;

@@ -34,8 +34,11 @@ public:
   Error Initialize(int width, int height, const Theme& theme);
   bool isopen();
   SkCanvas * canvas() { return m_surface->getCanvas(); }
+
   string ClipboardRead();
   void ClipboardWrite(const string &str);
+  void SetTitle(const string &str);
+
   void DrawAndPoll(bool significant_redraw);
 private:
   const Theme *m_theme{nullptr};

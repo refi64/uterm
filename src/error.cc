@@ -38,8 +38,8 @@ void Error::Print() {
 
   if (!m_stack.empty()) {
     #ifdef ABSL_HAVE_ELF_MEM_IMAGE
-    absl::debug_internal::VDSOSupport vdso;
-    absl::debug_internal::ElfMemImage::SymbolInfo symbol;
+    absl::debugging_internal::VDSOSupport vdso;
+    absl::debugging_internal::ElfMemImage::SymbolInfo symbol;
     #endif
 
     fmt::print("stack trace:\n");

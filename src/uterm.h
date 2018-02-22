@@ -53,6 +53,7 @@ private:
   void HandleResize(int width, int height);
   void HandleSelection(Selection state, double mx, double my);
   void HandleScroll(ScrollDirection direction, uint distance);
+  void HandleTitle(const string &title);
 
   Config m_config;
   Terminal m_term;

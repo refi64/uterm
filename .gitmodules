@@ -6,13 +6,16 @@
 	url = https://github.com/abseil/abseil-cpp
 [submodule "deps/skia"]
 	path = deps/skia
-	url = https://skia.googlesource.com/skia/
+	url = https://skia.googlesource.com/skia
+    branch = chrome/m65
 [submodule "deps/fmt"]
 	path = deps/fmt
 	url = https://github.com/fmtlib/fmt.git
+    branch = 4.x
 [submodule "deps/utfcpp"]
 	path = deps/utfcpp
 	url = https://github.com/nemtrif/utfcpp.git
 [submodule "deps/libtsm"]
 	path = deps/libtsm
-	url = https://github.com/Aetf/libtsm
+	url = https://github.com/kirbyfan64/libtsm
+    branch = uterm-merge-1

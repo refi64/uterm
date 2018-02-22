@@ -111,6 +111,10 @@ void Window::ClipboardWrite(const string &str) {
   glfwSetClipboardString(m_window, str.c_str());
 }
 
+void Window::SetTitle(const string &title) {
+  glfwSetWindowTitle(m_window, title.c_str());
+}
+
 void Window::DrawAndPoll(bool significant_redraw) {
   SkPaint paint;
   paint.setBlendMode(SkBlendMode::kSrc);

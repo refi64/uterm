@@ -75,6 +75,7 @@ int Uterm::Run() {
   m_term.set_pty(&pty);
   m_term.set_copy_cb(std::bind(&Uterm::HandleCopy, this, _1));
   m_term.set_paste_cb(std::bind(&Uterm::HandlePaste, this));
+  m_term.set_title_cb(std::bind(&Uterm::HandleTitle, this, _1));
 
   for (auto &font : m_config.fonts()) {
     m_display.AddFont(font.name, font.size);
@@ -140,4 +141,8 @@ void Uterm::HandleSelection(Selection state, double mx, double my) {
 
 void Uterm::HandleScroll(ScrollDirection direction, uint distance) {
   m_term.Scroll(direction, distance);
+}
+
+void Uterm::HandleTitle(const string &title) {
+  m_window.SetTitle(title);
 }

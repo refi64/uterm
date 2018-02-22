@@ -9,6 +9,7 @@
 Terminal::Terminal() {
   tsm_screen_new(&m_screen, nullptr, nullptr);
   tsm_vte_new(&m_vte, m_screen, StaticWrite, static_cast<void*>(this), nullptr, nullptr);
+  tsm_vte_set_osc_cb(m_vte, StaticOsc, static_cast<void*>(this));
 
   tsm_screen_attr tattr;
   tattr.fccode = Colors::kForeground;
@@ -28,6 +29,7 @@ void Terminal::set_theme(const Theme& theme) { m_theme = &theme; }
 void Terminal::set_draw_cb(DrawCb draw_cb) { m_draw_cb = draw_cb; }
 void Terminal::set_copy_cb(CopyCb copy_cb) { m_copy_cb = copy_cb; }
 void Terminal::set_paste_cb(PasteCb paste_cb) { m_paste_cb = paste_cb; }
+void Terminal::set_title_cb(TitleCb title_cb) { m_title_cb = title_cb; }
 void Terminal::set_pty(Pty *pty) { m_pty = pty; }
 
 Pos Terminal::cursor() {
@@ -137,17 +139,6 @@ void Terminal::Draw() {
   m_age = tsm_screen_draw(m_screen, StaticDraw, static_cast<void*>(this));
 }
 
-void Terminal::StaticWrite(tsm_vte *vte, const char *u8, size_t len, void *data) {
-  Terminal *term = static_cast<Terminal*>(data);
-
-  string text(u8, len);
-  if (term->m_pty != nullptr) {
-    if (auto err = term->m_pty->Write(text)) {
-      err.Extend("in StaticWrite").Print();
-    }
-  }
-}
-
 static SkColor TsmAttrColorCodeToSkColor(const Theme& theme, int code) {
   return theme[std::min(code, Colors::kMax)];
 }
@@ -195,4 +186,24 @@ int Terminal::StaticDraw(tsm_screen *screen, uint32 id, const uint32 *chars, siz
 
   term->m_draw_cb(utf32, pos, attr, width);
   return 0;
+}
+
+void Terminal::StaticWrite(tsm_vte *vte, const char *u8, size_t len, void *data) {
+  Terminal *term = static_cast<Terminal*>(data);
+
+  string text(u8, len);
+  if (term->m_pty != nullptr) {
+    if (auto err = term->m_pty->Write(text)) {
+      err.Extend("in StaticWrite").Print();
+    }
+  }
+}
+
+void Terminal::StaticOsc(tsm_vte *vte, const char *u8, size_t len, void *data) {
+  Terminal *term = static_cast<Terminal*>(data);
+
+  if (u8[0] == '2' && u8[1] == ';') {
+    string text(u8 + 2, len - 2);
+    term->m_title_cb(text);
+  }
 }
