@@ -1,0 +1,13 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: base/devel
+    steps:
+      - checkout
+      - run:
+          name: Build uterm
+          command: echo Hello, world.
+      - run:
+          name: Print the Current Time
+          command: date
