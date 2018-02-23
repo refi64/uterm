@@ -3,6 +3,8 @@
 #include <sys/wait.h>
 #include <signal.h>
 
+Uterm gUterm;
+
 void ProtectedBuffer::Append(string text) {
   std::unique_lock<std::mutex> lock{m_lock};
   m_buffer += text;
@@ -17,17 +19,20 @@ string ProtectedBuffer::ReadAndClear() {
 
 ReaderThread::ReaderThread(Pty *pty): m_thread{&ReaderThread::StaticRun, this, pty} {}
 
+void ReaderThread::Interrupt() {
+  pthread_kill(m_thread.native_handle(), SIGUSR1);
+}
+
 void ReaderThread::Stop() {
   m_done_flag.set();
-  // Interrupt waiting polls.
-  pthread_kill(m_thread.native_handle(), SIGUSR1);
+  Interrupt();
   m_thread.join();
 }
 
 void ReaderThread::StaticRun(Pty *pty) {
   bool eof = false;
   while (!m_done_flag.get()) {
-    if (auto e_text = pty->Read(eof)) {
+    if (auto e_text = pty->Read(&eof)) {
       if (!e_text->empty()) {
         m_buffer.Append(*e_text);
         // Do a short (0.5ms) sleep to avoid high CPU usage because of short polls.
@@ -42,7 +47,8 @@ void ReaderThread::StaticRun(Pty *pty) {
 }
 
 static void CatchSigchld(int sig) {
-  waitpid(-1, NULL, WNOHANG);
+  waitpid(-1, nullptr, WNOHANG);
+  gUterm.InterruptReader();
 }
 
 int Uterm::Run() {
@@ -64,6 +70,7 @@ int Uterm::Run() {
   }
 
   ReaderThread reader{&pty};
+  m_current_reader = &reader;
 
   if (auto err = m_window.Initialize(kWidth, kHeight, m_config.theme())) {
     err.Extend("while initializing window").Print();
@@ -105,8 +112,19 @@ int Uterm::Run() {
     m_window.DrawAndPoll(significant_redraw);
   }
 
+  std::unique_lock<std::mutex> lock{m_current_reader_lock};
+  m_current_reader = nullptr;
   reader.Stop();
+
   return 0;
+}
+
+void Uterm::InterruptReader() {
+  std::unique_lock<std::mutex> lock{m_current_reader_lock};
+
+  if (m_current_reader != nullptr) {
+    m_current_reader->Interrupt();
+  }
 }
 
 void Uterm::HandleCopy(const string &str) {

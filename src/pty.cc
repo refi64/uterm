@@ -1,6 +1,7 @@
 #include "pty.h"
 
 #include <sys/ioctl.h>
+#include <sys/wait.h>
 #include <termios.h>
 #include <signal.h>
 #include <unistd.h>
@@ -109,12 +110,19 @@ Error Pty::Spawn(const std::vector<string>& command) {
   }
 }
 
-Expect<string> Pty::Read(bool& eof) {
+Expect<string> Pty::Read(bool *eof) {
+  pid_t child_status = waitpid(m_pid, nullptr, WNOHANG);
+  if (child_status == m_pid || (child_status == -1 && errno == ECHILD)) {
+    *eof = true;
+    return Expect<string>::New(string(""));
+  }
+
   pollfd poll_master;
   poll_master.fd = m_master;
   poll_master.events = POLLIN;
   poll_master.revents = 0;
 
+  fflush(stdout);
   int polled = poll(&poll_master, 1, -1);
   if (polled == -1) {
     if (errno == EINTR) {
@@ -123,6 +131,7 @@ Expect<string> Pty::Read(bool& eof) {
       return Expect<string>::New(Error::Errno().Extend("polling master PTY"));
     }
   } else if (poll_master.revents & POLLIN) {
+    fflush(stdout);
     char buf[4096];
     int sz = read(m_master, buf, sizeof(buf));
 
@@ -132,7 +141,7 @@ Expect<string> Pty::Read(bool& eof) {
 
     return Expect<string>::New(string(buf, sz));
   } else if (poll_master.revents & (POLLERR | POLLHUP)) {
-    eof = true;
+    *eof = true;
     return Expect<string>::New(string(""));
   } else {
     return Expect<string>::WithError("unknown error occurred in NonblockingRead");

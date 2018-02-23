@@ -13,7 +13,7 @@ public:
 
   // Performs a blocking read from the pty output. If an EOF occurs, returns an empty
   // string.
-  Expect<string> Read(bool& eof);
+  Expect<string> Read(bool *eof);
   // Performs a blocking write
   Error Write(const string& data);
   // Sends the given signal to the pty.

@@ -30,6 +30,7 @@ class ReaderThread {
 public:
   ReaderThread(Pty *pty);
 
+  void Interrupt();
   void Stop();
 
   ProtectedBuffer & buffer() { return m_buffer; }
@@ -45,6 +46,7 @@ private:
 class Uterm {
 public:
   int Run();
+  void InterruptReader();
 private:
   void HandleCopy(const string &str);
   string HandlePaste();
@@ -55,8 +57,13 @@ private:
   void HandleScroll(ScrollDirection direction, uint distance);
   void HandleTitle(const string &title);
 
+  std::mutex m_current_reader_lock;
+  ReaderThread *m_current_reader{nullptr};
+
   Config m_config;
   Terminal m_term;
   Display m_display{&m_term};
   Window m_window;
 };
+
+extern Uterm gUterm;

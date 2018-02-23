@@ -1,3 +1,5 @@
 #include "uterm.h"
 
-int main() { return Uterm().Run(); }
+int main() {
+  return gUterm.Run();
+}
