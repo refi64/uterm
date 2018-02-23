@@ -6,6 +6,12 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install fbuild
+          command: >
+            git clone https://github.com/felix-lang/fbuild.git
+            cd fbuild
+            python setup.py install
+      - run:
           name: Build uterm
           command: echo Hello, world.
       - run:
