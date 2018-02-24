@@ -81,10 +81,10 @@ def configure(ctx):
     cxx = guess_cxx.static(ctx, exe=ctx.options.cxx, flags=ctx.options.cxxflag,
                            platform_options=[
                             ({'posix'}, {'flags+': ['-std=c++11'] + posix_flags}),
-                            ({'clang'}, {'flags+': clang_flags,
-                                         'macros':
-                                            ['__CLANG_SUPPORT_DYN_ANNOTATION__']}),
-                            ({'!clang'}, {'flags+': nonclang_flags}),
+                            ({'clang++'}, {'flags+': clang_flags,
+                                            'macros':
+                                                ['__CLANG_SUPPORT_DYN_ANNOTATION__']}),
+                            ({'!clang++'}, {'flags+': nonclang_flags}),
                            ], **kw)
 
     xkbcommon = pkg_config(ctx, 'xkbcommon', optional=True)
