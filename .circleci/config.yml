@@ -46,12 +46,14 @@ jobs:
               -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
               -DGLFW_BUILD_EXAMPLES=NO -DGLFW_BUILD_TESTS=NO -DGLFW_BUILD_DOCS=NO
             make -j4 install
+      - checkout
       - run:
-          name: Checkout uterm (with submodules)
+          name: Checkout submodules
           command: |
             set -ex
 
-            git clone --recursive https://github.com/kirbyfan64/uterm.git
+            git submodule init
+            git submodule update
       - run:
           name: Install fbuild
           command: |
