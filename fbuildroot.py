@@ -171,6 +171,35 @@ def build_gl3w(ctx, c):
     return Record(includes=[include], lib=c.build_lib('gl3w', [src], includes=[include]))
 
 
+def build_fmtlib(ctx, cxx):
+    fmt = Path('deps/fmt')
+    return Record(includes=[fmt], lib=cxx.build_lib('fmt', [fmt / 'fmt' / 'format.cc'],
+                                                    include_source_dirs=False))
+
+
+def build_libtsm(ctx, c, xkbcommon):
+    base = Path('deps/libtsm')
+    src = base / 'src'
+    shl = src / 'shared'
+    tsm = src / 'tsm'
+
+    sources = Path.glob(tsm / '*.c') + Path.glob(shl / '*.c') + \
+              [base / 'external' / 'wcwidth.c']
+    includes = [shl, tsm, base]
+
+    if xkbcommon is not None:
+        cflags = xkbcommon.cflags
+    else:
+        cflags = []
+
+    macros = ['_GNU_SOURCE=1']
+    if not ctx.options.release:
+        macros.append('BUILD_ENABLE_DEBUG')
+
+    return Record(includes=includes, lib=c.build_lib('tsm', sources, includes=includes,
+                                                     macros=macros, cflags=cflags))
+
+
 def skia_sources(*globs):
     return prefixed_sources('deps/skia/src', globs)
 
@@ -807,43 +836,14 @@ def build_skia(ctx, platform, cxx, freetype, fontconfig):
                   ldlibs=ldlibs)
 
 
-def build_fmtlib(ctx, cxx):
-    fmt = Path('deps/fmt')
-    return Record(includes=[fmt], lib=cxx.build_lib('fmt', [fmt / 'fmt' / 'format.cc'],
-                                                    include_source_dirs=False))
-
-
-def build_libtsm(ctx, c, xkbcommon):
-    base = Path('deps/libtsm')
-    src = base / 'src'
-    shl = src / 'shared'
-    tsm = src / 'tsm'
-
-    sources = Path.glob(tsm / '*.c') + Path.glob(shl / '*.c') + \
-              [base / 'external' / 'wcwidth.c']
-    includes = [shl, tsm, base]
-
-    if xkbcommon is not None:
-        cflags = xkbcommon.cflags
-    else:
-        cflags = []
-
-    macros = ['_GNU_SOURCE=1']
-    if not ctx.options.release:
-        macros.append('BUILD_ENABLE_DEBUG')
-
-    return Record(includes=includes, lib=c.build_lib('tsm', sources, includes=includes,
-                                                     macros=macros, cflags=cflags))
-
-
 def build(ctx):
     rec = configure(ctx)
 
     gl3w = build_gl3w(ctx, rec.c)
     abseil = build_abseil(ctx, rec.cxx)
-    skia = build_skia(ctx, rec.platform, rec.cxx, rec.freetype, rec.fontconfig)
     fmt = build_fmtlib(ctx, rec.cxx)
     tsm = build_libtsm(ctx, rec.c, rec.xkbcommon)
+    skia = build_skia(ctx, rec.platform, rec.cxx, rec.freetype, rec.fontconfig)
 
     rec.cxx.build_exe('uterm', Path.glob('src/*.cc'),
                       includes=abseil.includes + gl3w.includes + skia.includes +

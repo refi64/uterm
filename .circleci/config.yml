@@ -71,12 +71,13 @@ jobs:
             export PKG_CONFIG_PATH=/usr/lib/pkgconfig
             # XXX
             sed -i '/#include <GLES2\/gl2.h>/d' deps/skia/src/gpu/gl/egl/*.cpp
-            if ! fbuild --release --cxxflag=-stdlib=libc++ -j4; then
+            if ! fbuild --release --cflag=-include --cflag=asm/ioctls.h --cxxflag=-stdlib=libc++ -j4; then
+              set +x
               echo '*******************************'
               echo '********** BUILD LOG **********'
               echo '*******************************'
               echo
-              cat build/fbuild.log
+              tail -200 build/fbuild.log
               false
             fi
       - run:
