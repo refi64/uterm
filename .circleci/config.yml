@@ -23,7 +23,7 @@ jobs:
             yum -y install epel-release
             yum -y install https://centos6.iuscommunity.org/ius-release.rpm
             yum -y install \
-              clang gcc gcc-c++ cmake git lld \
+              clang gcc gcc-c++ cmake git2u lld \
               fontconfig-devel freetype-devel libconfuse-devel \
               libX11-devel libXrandr-devel libXi-devel libXinerama-devel \
               libXcursor-devel \
@@ -33,8 +33,6 @@ jobs:
             curl -Lo upspin.tar.gz https://upspin.io/dl/upspin.linux_amd64.tar.gz
             tar -C /usr/bin -xvf upspin.tar.gz
             rm upspin.tar.gz
-
-            ls -Fla
       - checkout
       - run:
           name: Checkout submodules
