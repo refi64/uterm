@@ -845,13 +845,17 @@ def build(ctx):
     tsm = build_libtsm(ctx, rec.c, rec.xkbcommon)
     skia = build_skia(ctx, rec.platform, rec.cxx, rec.freetype, rec.fontconfig)
 
+    macros = ['UTERM_BLACK_SCREEN_WORKAROUND']
+    if rec.xkbcommon is None:
+        macros.append('USE_LIBTSM_XKBCOMMON')
+
     rec.cxx.build_exe('uterm', Path.glob('src/*.cc'),
                       includes=abseil.includes + gl3w.includes + skia.includes +
                                fmt.includes + tsm.includes +
                                ['deps/utfcpp/source', 'deps/concurrentqueue'],
                       libs=[abseil.base, abseil.strings, abseil.stacktrace, gl3w.lib,
                             skia.lib, fmt.lib, tsm.lib],
-                      macros=['UTERM_BLACK_SCREEN_WORKAROUND'],
+                      macros=macros,
                       external_libs=['dl', 'pthread'],
                       lflags=['-fuse-ld=lld'],
                       cflags=rec.glfw.cflags + rec.egl.cflags + rec.confuse.cflags,

@@ -1,6 +1,11 @@
 #include "keys.h"
 
+#ifdef USE_LIBTSM_XKBCOMMON
+#include "../deps/libtsm/external/xkbcommon-keysyms.h"
+#else
 #include <xkbcommon/xkbcommon-keysyms.h>
+#endif
+
 #include <GLFW/glfw3.h>
 
 uint32 GlfwKeyToXkbKeysym(int key) {
