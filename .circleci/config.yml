@@ -23,7 +23,7 @@ jobs:
             yum -y install epel-release
             yum -y install https://centos6.iuscommunity.org/ius-release.rpm
             yum -y install \
-              clang gcc cmake git lld \
+              clang gcc gcc-c++ cmake git lld \
               fontconfig-devel freetype-devel libconfuse-devel \
               libX11-devel libXrandr-devel libXi-devel libXinerama-devel \
               libXcursor-devel \
@@ -66,7 +66,14 @@ jobs:
             set -ex
 
             cd uterm
-            fbuild --release -j4
+            if ! fbuild --release -j4; then
+              echo '*******************************'
+              echo '********** BUILD LOG **********'
+              echo '*******************************'
+              echo
+              cat build/fbuild.log
+              false
+            fi
       - run:
           name: Connect to upspin
           command: |
