@@ -20,7 +20,7 @@ jobs:
             mkdir /.cache
             chown -R nobody /.cache
 
-            pacman -Sy confuse expac fontconfig freetype2 git libxkbcommon mesa perl yajl --noconfirm --needed
+            pacman -Sy confuse expac fontconfig freetype2 git libxkbcommon mesa perl python yajl --noconfirm --needed
 
             sudo -u nobody sh -c '
               cd /tmp
@@ -30,7 +30,7 @@ jobs:
               makepkg PKGBUILD --skippgpcheck --install --needed --noconfirm
             '
 
-            sudo -u nobody pacaur -S glfw-x11-git --noconfirm --noconfirm --noedit --needed
+            sudo -u nobody pacaur -S glfw-x11-git upspin --noconfirm --noconfirm --noedit --needed
       - checkout:
           post:
             - git submodule sync
@@ -43,7 +43,4 @@ jobs:
             python setup.py install
       - run:
           name: Build uterm
-          command: echo Hello, world.
-      - run:
-          name: Print the Current Time
-          command: date
+          command: fbuild
