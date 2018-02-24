@@ -19,6 +19,7 @@ jobs:
             pacman -Sy confuse expac fontconfig freetype2 git libxkbcommon mesa perl yajl --noconfirm --needed
 
             sudo -u nobody sh -c '
+              cd /tmp
               curl -o PKGBUILD.cower https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=cower
               makepkg PKGBUILD.cower --skippgpcheck --install --needed
               curl -o PKGBUILD.pacaur https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=pacaur
