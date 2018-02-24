@@ -20,10 +20,10 @@ jobs:
 
             sudo -u nobody sh -c '
               cd /tmp
-              curl -o PKGBUILD.cower https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=cower
-              makepkg PKGBUILD.cower --skippgpcheck --install --needed
-              curl -o PKGBUILD.pacaur https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=pacaur
-              makepkg PKGBUILD.pacaur --skippgpcheck --install --needed
+              curl -o PKGBUILD https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=cower
+              makepkg PKGBUILD --skippgpcheck --install --needed
+              curl -o PKGBUILD https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=pacaur
+              makepkg PKGBUILD --skippgpcheck --install --needed
             '
 
             sudo -u nobody pacaur -S glfw-x11-git --noconfirm --noconfirm --noedit --needed
