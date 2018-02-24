@@ -57,7 +57,9 @@ def configure(ctx):
         raise fbuild.ConfigFailed('Only Mac and Linux are currently supported.')
 
     if ctx.options.ld is not None:
-        posix_flags.append('-fuse-ld=%s' % ctx.options.ld)
+        # Shortcut it to avoid issues on old systems (e.g. CentOS 6).
+        if ctx.options.ld != 'bfd':
+            posix_flags.append('-fuse-ld=%s' % ctx.options.ld)
     else:
         clang_flags.append('-fuse-ld=lld')
         nonclang_flags.append('-fuse-ld=gold')
