@@ -183,8 +183,8 @@ def build_libtsm(ctx, c, xkbcommon):
     shl = src / 'shared'
     tsm = src / 'tsm'
 
-    sources = Path.glob(tsm / '*.c') + Path.glob(shl / '*.c') + \
-              [base / 'external' / 'wcwidth.c']
+    sources = Path.glob(tsm / '*.c') + [shl / 'shl-htable.c',
+                                        base / 'external' / 'wcwidth.c']
     includes = [shl, tsm, base]
 
     if xkbcommon is not None:
