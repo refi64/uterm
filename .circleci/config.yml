@@ -27,7 +27,7 @@ jobs:
               fontconfig-devel freetype-devel libconfuse-devel \
               libX11-devel libXrandr-devel libXi-devel libXinerama-devel \
               libXcursor-devel \
-              mesa-libGL-devel mesa-libEGL-devel \
+              mesa-libGL-devel mesa-libEGL-devel mesa-libGLES-devel \
               python36u python36u-setuptools python-argparse
 
             curl -Lo upspin.tar.gz https://upspin.io/dl/upspin.linux_amd64.tar.gz
@@ -91,7 +91,7 @@ jobs:
             set -ex
 
             mkdir -p usr/bin
-            cp uterm/build/uterm usr/bin
+            cp build/uterm usr/bin
             curl -Lo functions.sh \
               https://raw.githubusercontent.com/probonopd/AppImages/master/functions.sh
 
