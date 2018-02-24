@@ -30,7 +30,7 @@ jobs:
               makepkg PKGBUILD --skippgpcheck --install --needed --noconfirm
             '
 
-            sudo -u nobody pacaur -S glfw-x11-git upspin --noconfirm --noconfirm --noedit --needed
+            sudo -u nobody pacaur -S glfw-x11-git upspin-git --noconfirm --noconfirm --noedit --needed
       - checkout:
           post:
             - git submodule sync
