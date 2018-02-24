@@ -22,7 +22,10 @@ jobs:
 
             yum -y install epel-release
             yum -y install https://centos6.iuscommunity.org/ius-release.rpm
-            yum -y install clang cmake curl fontconfig-devel freetype2-devel git libconfuse-devel libX11-devel lld mesa-libGL-devel mesa-libEGL-devel python36u python36u-setuptools tar
+            yum -y install \
+              clang cmake curl fontconfig-devel freetype2-devel git glibc-devel \
+              libconfuse-devel libgcc libX11-devel lld make mesa-libGL-devel \
+              mesa-libEGL-devel pkgconfig python36u python36u-setuptools tar
 
             curl -Lo upspin.tar.gz https://upspin.io/dl/upspin.linux_amd64.tar.gz
             tar -C /usr/bin -xvf upspin.tar.gz
