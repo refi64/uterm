@@ -13,7 +13,7 @@ jobs:
             cat > /etc/yum.repos.d/llvm.repo <<EOF
             [llvm]
             name=LLVM for CentOS-$releasever
-            baseurl=https://llvm.cpp.fail/CentOS/$releasever/llvm/$basearch/
+            baseurl=https://llvm.cpp.fail/CentOS/6/llvm/x86_64/
             enabled=1
             gpgcheck=1
             repo_gpgcheck=1
@@ -22,7 +22,7 @@ jobs:
 
             yum -y install epel-release
             yum -y install https://centos6.iuscommunity.org/ius-release.rpm
-            yum install clang cmake curl fontconfig-devel freetype2-devel git libconfuse-devel lld mesa-libGL-devel mesa-libEGL-devel python36u python36u-setuptools tar
+            yum -y install clang cmake curl fontconfig-devel freetype2-devel git libconfuse-devel lld mesa-libGL-devel mesa-libEGL-devel python36u python36u-setuptools tar
 
             curl -Lo upspin.tar.gz https://upspin.io/dl/upspin.linux_amd64.tar.gz
             tar -C /usr/bin -xvf upspin.tar.gz
