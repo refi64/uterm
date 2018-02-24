@@ -7,8 +7,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            curl -L https://www.archlinux.org/mirrorlist/?country=US&protocol=http&protocol=https&ip_version=4&use_mirror_status=on
-            curl -L https://www.archlinux.org/mirrorlist/?country=US&protocol=http&protocol=https&ip_version=4&use_mirror_status=on | \
+            curl -L 'https://www.archlinux.org/mirrorlist/?country=US&protocol=http&protocol=https&ip_version=4&use_mirror_status=on' | \
               sed 's/#Server/Server/' | sudo tee /etc/pacman.d/mirrorlist
             sudo pacman -Sy confuse fontconfig freetype2 git libxkbcommon mesa --noconfirm --needed
             # https://gist.github.com/Tadly/0e65d30f279a34c33e9b: install Pacaur
