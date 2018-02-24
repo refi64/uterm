@@ -151,7 +151,8 @@ Error Config::Parse() {
   };
 
   cfg_opt_t opts[] = {
-    CFG_STR("shell", m_shell.c_str(), CFGF_NONE),
+    // Note that the const_cast is only needed on libconfuse versions <v2.8.
+    CFG_STR("shell", const_cast<char*>(m_shell.c_str()), CFGF_NONE),
 
     CFG_SEC("theme", theme_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_STR("current-theme", "", CFGF_NONE),
