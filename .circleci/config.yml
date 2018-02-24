@@ -22,35 +22,24 @@ jobs:
 
             yum -y install epel-release
             yum -y install https://centos6.iuscommunity.org/ius-release.rpm
-            yum -y install clang cmake curl fontconfig-devel freetype2-devel git libconfuse-devel lld mesa-libGL-devel mesa-libEGL-devel python36u python36u-setuptools tar
+            yum -y install clang cmake curl fontconfig-devel freetype2-devel git libconfuse-devel libX11-devel lld mesa-libGL-devel mesa-libEGL-devel python36u python36u-setuptools tar
 
             curl -Lo upspin.tar.gz https://upspin.io/dl/upspin.linux_amd64.tar.gz
             tar -C /usr/bin -xvf upspin.tar.gz
+      - run:
+          name: Build and install glfw
+          command: |
+            set -ex
 
-            # curl -L 'https://www.archlinux.org/mirrorlist/?country=US&protocol=http&protocol=https&ip_version=4&use_mirror_status=on' | \
-            #   sed 's/#Server/Server/' > /etc/pacman.d/mirrorlist
-            # echo 'root ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers
-            # echo 'nobody ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-            # echo 'Defaults env_keep += "PATH"' >> /etc/sudoers
+            git clone https://github.com/glfw/glfw.git
+            cd glfw
 
-            # export PATH="$PATH:/usr/bin/core_perl"
-            # XXX
-            # mkdir /.cache
-            # chown -R nobody /.cache
-
-            # pacman -Sy clang confuse expac fontconfig freetype2 git libxkbcommon lld mesa perl python python-setuptools yajl \
-            #   --noconfirm --needed
-
-            # sudo -u nobody sh -c '
-            #   cd /tmp
-            #   curl -o PKGBUILD https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=cower
-            #   makepkg PKGBUILD --skippgpcheck --install --needed --noconfirm
-            #   curl -o PKGBUILD https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=pacaur
-            #   makepkg PKGBUILD --skippgpcheck --install --needed --noconfirm
-            # '
-
-            # sudo -u nobody pacaur -S glfw-x11-git upspin-git --noconfirm --noconfirm --noedit --needed
-
+            mkdir build
+            cd build
+            cmake .. \
+              -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+              -DGLFW_BUILD_EXAMPLES=NO -DGLFW_BUILD_TESTS=NO -DGLFW_BUILD_DOCS=NO
+            make -j4 install
       - run:
           name: Checkout uterm (with submodules)
           command: |
