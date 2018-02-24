@@ -47,3 +47,9 @@ jobs:
           command: |
             cd uterm
             fbuild --release -j4
+      - run:
+          name: Connect to upspin
+          command: |
+            upspin keygen -curve p256 -secretseed $UPSPIN_KEY ~/.ssh/nightly@refi64.com
+            upspin signup -server=upspin.refi64.com nightly@refi64.com
+            upspin user | upspin user -put
