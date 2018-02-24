@@ -52,7 +52,7 @@ jobs:
             mkdir build
             cd build
             cmake .. \
-              -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+              -DCMAKE_C_COMPILER=clang -DCMAKE_INSTALL_PREFIX=/usr \
               -DGLFW_BUILD_EXAMPLES=NO -DGLFW_BUILD_TESTS=NO -DGLFW_BUILD_DOCS=NO
             make -j4 install
       - run:

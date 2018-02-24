@@ -31,9 +31,9 @@ def pkg_config(ctx, package, *, name=None, optional=False, suffix=''):
     if suffix:
         suffix = ' %s' % suffix
 
+    pkg = PkgConfig(ctx, package)
     ctx.logger.check('checking for %s' % name)
     try:
-        pkg = PkgConfig(ctx, package)
         rec = Record(cflags=pkg.cflags(), ldlibs=pkg.libs())
     except fbuild.Error:
         ctx.logger.failed()
