@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <unistd.h>
 
-#include <xkbcommon/xkbcommon-keysyms.h>
 #include <utf8.h>
 
 Terminal::Terminal() {
