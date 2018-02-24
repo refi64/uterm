@@ -35,27 +35,37 @@ jobs:
       - run:
           name: Checkout uterm (with submodules)
           command: |
+            set -ex
+
             git clone --recursive https://github.com/kirbyfan64/uterm.git
       - run:
           name: Install fbuild
           command: |
+            set -ex
+
             git clone https://github.com/felix-lang/fbuild.git
             cd fbuild
             python setup.py install
       - run:
           name: Build uterm
           command: |
+            set -ex
+
             cd uterm
             fbuild --release -j4
       - run:
           name: Connect to upspin
           command: |
+            set -ex
+
             upspin keygen -curve p256 -secretseed $UPSPIN_KEY ~/.ssh/nightly@refi64.com
             upspin signup -server=upspin.refi64.com nightly@refi64.com ||:
             upspin user | upspin user -put
       - run:
           name: Build an AppImage
           command: |
+            set -ex
+
             mkdir -p usr/bin
             cp uterm/build/uterm usr/bin
             curl -Lo functions.sh \
