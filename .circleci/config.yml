@@ -31,10 +31,11 @@ jobs:
             '
 
             sudo -u nobody pacaur -S glfw-x11-git upspin-git --noconfirm --noconfirm --noedit --needed
-      - checkout:
-          post:
-            - git submodule sync
-            - git submodule update --init
+      - run:
+          name: Checkout submodules
+          command: |
+            git submodule sync
+            git submodule update --init
       - run:
           name: Install fbuild
           command: |
