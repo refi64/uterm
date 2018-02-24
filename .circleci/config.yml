@@ -16,9 +16,9 @@ jobs:
             echo 'Defaults env_keep += "PATH"' >> /etc/sudoers
 
             export PATH="$PATH:/usr/bin/core_perl"
-            export AURDEST=/pacaur
-            mkdir $AURDEST
-            chmod +rw $AURDEST
+            # XXX
+            mkdir /.cache
+            chown -R nobody /.cache
 
             pacman -Sy confuse expac fontconfig freetype2 git libxkbcommon mesa perl yajl --noconfirm --needed
 
