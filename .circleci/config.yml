@@ -11,7 +11,8 @@ jobs:
             whoami
             curl -L 'https://www.archlinux.org/mirrorlist/?country=US&protocol=http&protocol=https&ip_version=4&use_mirror_status=on' | \
               sed 's/#Server/Server/' > /etc/pacman.d/mirrorlist
-            echo 'nobody ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers
+            echo 'root ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers
+            echo 'nobody ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
             echo 'Defaults env_keep += "PATH"' >> /etc/sudoers
             pacman -Sy confuse fontconfig freetype2 git libxkbcommon mesa perl --noconfirm --needed
             # https://gist.github.com/Tadly/0e65d30f279a34c33e9b: install Pacaur
