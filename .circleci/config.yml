@@ -21,9 +21,9 @@ jobs:
             sudo -u nobody sh -c '
               cd /tmp
               curl -o PKGBUILD https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=cower
-              makepkg PKGBUILD --skippgpcheck --install --needed
+              makepkg PKGBUILD --skippgpcheck --install --needed --noconfirm
               curl -o PKGBUILD https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=pacaur
-              makepkg PKGBUILD --skippgpcheck --install --needed
+              makepkg PKGBUILD --skippgpcheck --install --needed --noconfirm
             '
 
             sudo -u nobody pacaur -S glfw-x11-git --noconfirm --noconfirm --noedit --needed
