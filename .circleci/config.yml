@@ -69,6 +69,7 @@ jobs:
           command: |
             set -ex
 
+            export PATH="$PATH:/opt/rh/devtoolset-7/root/usr/bin"
             export PKG_CONFIG_PATH=/usr/lib/pkgconfig
             # XXX
             sed -i '/#include <GLES2\/gl2.h>/d' deps/skia/src/gpu/gl/egl/*.cpp
