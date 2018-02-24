@@ -9,7 +9,7 @@ jobs:
           command: |
             sudo pacman -Sy curl --noconfirm --needed
             curl -L https://www.archlinux.org/mirrorlist/?country=US&protocol=http&protocol=https&ip_version=4&use_mirror_status=on | \
-              sudo tee /etc/pacman.d/mirrorlist >/dev/null
+              sed 's/#Server/Server/' | sudo tee /etc/pacman.d/mirrorlist >/dev/null
             sudo pacman -Sy confuse fontconfig freetype2 git libxkbcommon mesa --noconfirm --needed
             # https://gist.github.com/Tadly/0e65d30f279a34c33e9b: install Pacaur
             curl -Ls https://goo.gl/cF2iJy | bash
