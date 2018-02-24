@@ -2,36 +2,55 @@ version: 2
 jobs:
   build:
     docker:
-      - image: base/devel
+      # - image: base/devel
+      - image: centos:6
     steps:
       - run:
           name: Install dependencies
           command: |
             set -ex
 
-            curl -L 'https://www.archlinux.org/mirrorlist/?country=US&protocol=http&protocol=https&ip_version=4&use_mirror_status=on' | \
-              sed 's/#Server/Server/' > /etc/pacman.d/mirrorlist
-            echo 'root ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers
-            echo 'nobody ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-            echo 'Defaults env_keep += "PATH"' >> /etc/sudoers
+            cat > /etc/yum.repos.d/llvm.repo <<EOF
+            [llvm]
+            name=LLVM for CentOS-$releasever
+            baseurl=https://llvm.cpp.fail/CentOS/$releasever/llvm/$basearch/
+            enabled=1
+            gpgcheck=1
+            repo_gpgcheck=1
+            gpgkey=https://llvm.cpp.fail/gpg.key
+            EOF
 
-            export PATH="$PATH:/usr/bin/core_perl"
+            yum -y install epel-release
+            yum -y install https://centos6.iuscommunity.org/ius-release.rpm
+            yum install clang cmake curl fontconfig-devel freetype2-devel git libconfuse-devel lld mesa-libGL-devel mesa-libEGL-devel python36u python36u-setuptools tar
+
+            curl -Lo upspin.tar.gz https://upspin.io/dl/upspin.linux_amd64.tar.gz
+            tar -C /usr/bin -xvf upspin.tar.gz
+
+            # curl -L 'https://www.archlinux.org/mirrorlist/?country=US&protocol=http&protocol=https&ip_version=4&use_mirror_status=on' | \
+            #   sed 's/#Server/Server/' > /etc/pacman.d/mirrorlist
+            # echo 'root ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers
+            # echo 'nobody ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+            # echo 'Defaults env_keep += "PATH"' >> /etc/sudoers
+
+            # export PATH="$PATH:/usr/bin/core_perl"
             # XXX
-            mkdir /.cache
-            chown -R nobody /.cache
+            # mkdir /.cache
+            # chown -R nobody /.cache
 
-            pacman -Sy clang confuse expac fontconfig freetype2 git libxkbcommon lld mesa perl python python-setuptools yajl \
-              --noconfirm --needed
+            # pacman -Sy clang confuse expac fontconfig freetype2 git libxkbcommon lld mesa perl python python-setuptools yajl \
+            #   --noconfirm --needed
 
-            sudo -u nobody sh -c '
-              cd /tmp
-              curl -o PKGBUILD https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=cower
-              makepkg PKGBUILD --skippgpcheck --install --needed --noconfirm
-              curl -o PKGBUILD https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=pacaur
-              makepkg PKGBUILD --skippgpcheck --install --needed --noconfirm
-            '
+            # sudo -u nobody sh -c '
+            #   cd /tmp
+            #   curl -o PKGBUILD https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=cower
+            #   makepkg PKGBUILD --skippgpcheck --install --needed --noconfirm
+            #   curl -o PKGBUILD https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=pacaur
+            #   makepkg PKGBUILD --skippgpcheck --install --needed --noconfirm
+            # '
 
-            sudo -u nobody pacaur -S glfw-x11-git upspin-git --noconfirm --noconfirm --noedit --needed
+            # sudo -u nobody pacaur -S glfw-x11-git upspin-git --noconfirm --noconfirm --noedit --needed
+
       - run:
           name: Checkout uterm (with submodules)
           command: |
@@ -45,7 +64,7 @@ jobs:
 
             git clone https://github.com/felix-lang/fbuild.git
             cd fbuild
-            python setup.py install
+            python3 setup.py install
       - run:
           name: Build uterm
           command: |
@@ -84,6 +103,7 @@ jobs:
             export VERSION=$COMMIT-$DATE
             mkdir uterm.AppDir
             mv usr uterm.AppDir
+            cp uterm.desktop uterm.AppDir
 
             cd uterm.AppDir
             get_apprun
