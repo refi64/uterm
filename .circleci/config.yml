@@ -59,7 +59,7 @@ jobs:
 
             git clone https://github.com/felix-lang/fbuild.git
             cd fbuild
-            python3 setup.py install
+            python3.6 setup.py install
       - run:
           name: Build uterm
           command: |
