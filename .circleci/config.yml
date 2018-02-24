@@ -70,6 +70,8 @@ jobs:
             cp uterm/build/uterm usr/bin
             curl -Lo functions.sh \
               https://raw.githubusercontent.com/probonopd/AppImages/master/functions.sh
+
+            set +e
             . ./functions.sh
 
             patch_usr
