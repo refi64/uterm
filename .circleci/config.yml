@@ -11,7 +11,7 @@ jobs:
               sed 's/#Server/Server/' | sudo tee /etc/pacman.d/mirrorlist >/dev/null
             sudo pacman -Sy confuse fontconfig freetype2 git libxkbcommon mesa --noconfirm --needed
             # https://gist.github.com/Tadly/0e65d30f279a34c33e9b: install Pacaur
-            curl -Ls https://goo.gl/cF2iJy | sed '/sudo pacman -Syu/d' | bash
+            curl -Ls https://goo.gl/cF2iJy | sed '/sudo pacman -Syu/d' | sudo -u nobody bash
             pacaur -S glfw-x11-git --noconfirm --noconfirm --noedit --needed
       - checkout:
           post:
