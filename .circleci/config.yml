@@ -19,9 +19,9 @@ jobs:
             pacman -Sy confuse expac fontconfig freetype2 git libxkbcommon mesa perl yajl --noconfirm --needed
 
             curl -o PKGBUILD.cower https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=cower
-            sudo -u nobody makepkg PKGBUILD.cower --skippgpcheck --install --needed
+            sudo -u nobody sh -c "cd ~; makepkg $HOME/PKGBUILD.cower --skippgpcheck --install --needed"
             curl -o PKGBUILD.pacaur https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=pacaur
-            sudo -u nobody makepkg PKGBUILD.pacaur --skippgpcheck --install --needed
+            sudo -u nobody sh -c "cd ~; makepkg $HOME/PKGBUILD.pacaur --skippgpcheck --install --needed"
 
             sudo -u nobody pacaur -S glfw-x11-git --noconfirm --noconfirm --noedit --needed
       - checkout:
