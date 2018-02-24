@@ -32,10 +32,9 @@ jobs:
 
             sudo -u nobody pacaur -S glfw-x11-git upspin-git --noconfirm --noconfirm --noedit --needed
       - run:
-          name: Checkout submodules
+          name: Checkout uterm (with submodules)
           command: |
-            git submodule sync
-            git submodule update --init
+            git clone --recursive https://github.com/kirbyfan64/uterm.git
       - run:
           name: Install fbuild
           command: |
@@ -44,4 +43,6 @@ jobs:
             python setup.py install
       - run:
           name: Build uterm
-          command: fbuild
+          command: |
+            cd uterm
+            fbuild
