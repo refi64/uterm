@@ -78,6 +78,7 @@ def configure(ctx):
                             ({'clang'}, {'flags+': clang_flags}),
                        ], **kw)
 
+    print(clang_flags, nonclang_flags)
     cxx = guess_cxx.static(ctx, exe=ctx.options.cxx, flags=ctx.options.cxxflag,
                            platform_options=[
                             ({'posix'}, {'flags+': ['-std=c++11'] + posix_flags}),
