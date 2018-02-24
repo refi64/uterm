@@ -27,7 +27,7 @@ jobs:
               fontconfig-devel freetype-devel libconfuse-devel \
               libX11-devel libXrandr-devel libXi-devel libXinerama-devel \
               libXcursor-devel \
-              mesa-libGL-devel mesa-libEGL-devel mesa-libGLES-devel \
+              mesa-libGL-devel mesa-libEGL-devel \
               python36u python36u-setuptools python-argparse
 
             curl -Lo upspin.tar.gz https://upspin.io/dl/upspin.linux_amd64.tar.gz
@@ -69,6 +69,8 @@ jobs:
             set -ex
 
             export PKG_CONFIG_PATH=/usr/lib/pkgconfig
+            # XXX
+            sed -i '/#include <GLES2\/gl2.h>/d' deps/skia/src/gpu/gl/egl/*.cpp
             if ! fbuild --release --cxxflag=-stdlib=libc++ -j4; then
               echo '*******************************'
               echo '********** BUILD LOG **********'
