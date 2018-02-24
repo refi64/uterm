@@ -68,6 +68,7 @@ jobs:
           command: |
             set -ex
 
+            export PKG_CONFIG_PATH=/usr/lib/pkgconfig
             if ! fbuild --release -j4; then
               echo '*******************************'
               echo '********** BUILD LOG **********'
