@@ -28,7 +28,7 @@ jobs:
               libXcursor-devel \
               mesa-libGL-devel mesa-libEGL-devel \
               python36u python36u-setuptools python-argparse
-            source /opt/rh/devtoolset-7/enable
+            #source /opt/rh/devtoolset-7/enable
 
             curl -Lo upspin.tar.gz https://upspin.io/dl/upspin.linux_amd64.tar.gz
             sudo tar -C /usr/bin -xvf upspin.tar.gz
