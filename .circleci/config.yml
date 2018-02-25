@@ -29,7 +29,7 @@ jobs:
               libXcursor-devel \
               mesa-libGL-devel mesa-libEGL-devel \
               python36u python36u-setuptools python-argparse
-            scl enable devtoolset-7 bash
+            source scl_source enable devtoolset-7
 
             curl -Lo upspin.tar.gz https://upspin.io/dl/upspin.linux_amd64.tar.gz
             tar -C /usr/bin -xvf upspin.tar.gz
