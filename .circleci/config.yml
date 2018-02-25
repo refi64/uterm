@@ -9,7 +9,7 @@ jobs:
           command: |
             set -ex
 
-            /usr/bin/which -a sudo
+            which -a sudo
 
             sudo tee /etc/yum.repos.d/llvm.repo >/dev/null <<EOF
             [llvm]
