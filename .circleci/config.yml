@@ -23,7 +23,7 @@ jobs:
             yum -y install epel-release centos-release-scl
             yum -y install https://centos6.iuscommunity.org/ius-release.rpm
             yum -y install \
-              devtoolset-7-binutils gcc gcc-c++ cmake git2u libc++ \
+              devtoolset-7 cmake git2u \
               fontconfig-devel freetype-devel libconfuse-devel \
               libX11-devel libXrandr-devel libXi-devel libXinerama-devel \
               libXcursor-devel \
