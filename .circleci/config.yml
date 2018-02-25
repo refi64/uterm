@@ -9,16 +9,6 @@ jobs:
           command: |
             set -ex
 
-            tee /etc/yum.repos.d/llvm.repo >/dev/null <<EOF
-            [llvm]
-            name=LLVM for CentOS-7
-            baseurl=https://llvm.cpp.fail/CentOS/7/llvm/x86_64/
-            enabled=1
-            gpgcheck=1
-            repo_gpgcheck=1
-            gpgkey=https://llvm.cpp.fail/gpg.key
-            EOF
-
             yum -y install epel-release centos-release-scl
             yum -y install https://centos7.iuscommunity.org/ius-release.rpm
             yum -y install \
