@@ -9,7 +9,7 @@ jobs:
           command: |
             set -ex
 
-            sudo tee /etc/yum.repos.d/llvm.repo >/dev/null <<EOF
+            tee /etc/yum.repos.d/llvm.repo >/dev/null <<EOF
             [llvm]
             name=LLVM for CentOS-7
             baseurl=https://llvm.cpp.fail/CentOS/7/llvm/x86_64/
@@ -19,9 +19,9 @@ jobs:
             gpgkey=https://llvm.cpp.fail/gpg.key
             EOF
 
-            sudo yum -y install epel-release centos-release-scl
-            sudo yum -y install https://centos7.iuscommunity.org/ius-release.rpm
-            sudo yum -y install \
+            yum -y install epel-release centos-release-scl
+            yum -y install https://centos7.iuscommunity.org/ius-release.rpm
+            yum -y install \
               devtoolset-7 cmake git2u \
               fontconfig-devel freetype-devel libconfuse-devel \
               libX11-devel libXrandr-devel libXi-devel libXinerama-devel \
@@ -31,7 +31,7 @@ jobs:
             #source /opt/rh/devtoolset-7/enable
 
             curl -Lo upspin.tar.gz https://upspin.io/dl/upspin.linux_amd64.tar.gz
-            sudo tar -C /usr/bin -xvf upspin.tar.gz
+            tar -C /usr/bin -xvf upspin.tar.gz
             rm upspin.tar.gz
       - checkout
       - run:
@@ -54,7 +54,7 @@ jobs:
             cmake .. \
               -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_SHARED_LIBS=YES \
               -DGLFW_BUILD_EXAMPLES=NO -DGLFW_BUILD_TESTS=NO -DGLFW_BUILD_DOCS=NO
-            sudo make -j4 install
+            make -j4 install
       - run:
           name: Install fbuild
           command: |
@@ -62,7 +62,7 @@ jobs:
 
             git clone https://github.com/felix-lang/fbuild.git
             cd fbuild
-            sudo python3.6 setup.py install
+            python3.6 setup.py install
       - run:
           name: Build uterm
           command: |
