@@ -12,13 +12,12 @@ jobs:
             yum -y install epel-release centos-release-scl
             yum -y install https://centos7.iuscommunity.org/ius-release.rpm
             yum -y install \
-              devtoolset-7 cmake git2u \
+              devtoolset-7 cmake git2u devtools-7-gcc-c++ \
               fontconfig-devel freetype-devel libconfuse-devel \
               libX11-devel libXrandr-devel libXi-devel libXinerama-devel \
               libXcursor-devel \
               mesa-libGL-devel mesa-libEGL-devel \
               python36u python36u-setuptools python-argparse
-            #source /opt/rh/devtoolset-7/enable
 
             curl -Lo upspin.tar.gz https://upspin.io/dl/upspin.linux_amd64.tar.gz
             tar -C /usr/bin -xvf upspin.tar.gz
