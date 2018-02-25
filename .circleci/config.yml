@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: centos/devtoolset-7-toolchain-centos7
+      - image: centos/python-35-centos7
     steps:
       - run:
           name: Install dependencies
