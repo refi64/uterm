@@ -9,6 +9,8 @@ jobs:
           command: |
             set -ex
 
+            alias sudo=/usr/bin/sudo
+
             sudo tee /etc/yum.repos.d/llvm.repo >/dev/null <<EOF
             [llvm]
             name=LLVM for CentOS-7
