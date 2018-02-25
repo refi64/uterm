@@ -2,8 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      # - image: base/devel
-      - image: centos:6
+      - image: centos/devtoolset-7-toolchain-centos7
     steps:
       - run:
           name: Install dependencies
@@ -12,8 +11,8 @@ jobs:
 
             cat > /etc/yum.repos.d/llvm.repo <<EOF
             [llvm]
-            name=LLVM for CentOS-6
-            baseurl=https://llvm.cpp.fail/CentOS/6/llvm/x86_64/
+            name=LLVM for CentOS-7
+            baseurl=https://llvm.cpp.fail/CentOS/7/llvm/x86_64/
             enabled=1
             gpgcheck=1
             repo_gpgcheck=1
@@ -21,7 +20,7 @@ jobs:
             EOF
 
             yum -y install epel-release centos-release-scl
-            yum -y install https://centos6.iuscommunity.org/ius-release.rpm
+            yum -y install https://centos7.iuscommunity.org/ius-release.rpm
             yum -y install \
               devtoolset-7 cmake git2u \
               fontconfig-devel freetype-devel libconfuse-devel \
