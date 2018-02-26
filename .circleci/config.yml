@@ -12,7 +12,7 @@ jobs:
             yum -y install epel-release centos-release-scl
             yum -y install https://centos7.iuscommunity.org/ius-release.rpm
             yum -y install \
-              devtoolset-7 cmake git2u devtools-7-gcc-c++ \
+              devtoolset-7 cmake git2u \
               fontconfig-devel freetype-devel libconfuse-devel \
               libX11-devel libXrandr-devel libXi-devel libXinerama-devel \
               libXcursor-devel \
@@ -61,7 +61,7 @@ jobs:
             export PKG_CONFIG_PATH=/usr/lib/pkgconfig
             # XXX
             sed -i '/#include <GLES2\/gl2.h>/d' deps/skia/src/gpu/gl/egl/*.cpp
-            if ! scl enable devtoolset-7 'fbuild --release -j4'; then
+            if ! fbuild --release -j4 --cxx=c++; then
               set +x
               echo '*******************************'
               echo '********** BUILD LOG **********'
