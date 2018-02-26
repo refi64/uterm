@@ -17,6 +17,7 @@ addons:
       - libfreetype6-dev
       - pkg-config
       - python3
+      - python3-setuptools
       - xorg-dev
 
 # script:
