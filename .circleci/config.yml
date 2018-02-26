@@ -12,7 +12,7 @@ jobs:
             yum -y install epel-release centos-release-scl
             yum -y install https://centos7.iuscommunity.org/ius-release.rpm
             yum -y install \
-              file wget \
+              file fuse wget \
               cmake gcc gcc-c++ git2u make \
               fontconfig-devel freetype-devel libconfuse-devel \
               libX11-devel libXrandr-devel libXi-devel libXinerama-devel \
@@ -110,4 +110,4 @@ jobs:
 
             generate_appimage
             ls
-            upspin cp $PWD/*.AppImage nightly@refi64.com/uterm
+            upspin cp $PWD/out/*.AppImage nightly@refi64.com/uterm
