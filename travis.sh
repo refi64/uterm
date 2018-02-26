@@ -39,7 +39,7 @@ upspin user | upspin user -put
 export PKG_CONFIG_PATH=/usr/lib/pkgconfig
 # XXX
 sed -i '/#include <GLES2\/gl2.h>/d' deps/skia/src/gpu/gl/egl/*.cpp
-if ! fbuild --release --cc=gcc-7 --cxx=g++-7 --ld=gold -j4; then
+if ! fbuild --release --cc=gcc --cxx=g++ --ld=gold --no-force-color -j4; then
   set +x
   echo '*******************************'
   echo '********** BUILD LOG **********'

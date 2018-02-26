@@ -8,15 +8,12 @@ addons:
       # - llvm-toolchain-trusty-5.0
     packages:
       - binutils
-      # - clang-5.0
       - cmake
-      - gcc-7
       - libgl1-mesa-dev
       - libegl1-mesa-dev
       - libconfuse-dev
       - libfontconfig1-dev
       - libfreetype6-dev
-      # - lld-5.0
       - pkg-config
       - python3
       - python3-setuptools
