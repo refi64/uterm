@@ -7,15 +7,17 @@ language: cpp
 script: ./travis.sh
 addons:
   apt:
-    # sources:
-      # - deadsnakes
+    sources:
+      - 'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-5.0 main'
     packages:
+      - clang-5.0
       - cmake
       - libgl1-mesa-dev
       - libegl1-mesa-dev
       - libconfuse-dev
       - libfontconfig1-dev
       - libfreetype6-dev
+      - lld-5.0
       - pkg-config
       - python3
       - python3-setuptools

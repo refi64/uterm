@@ -16,8 +16,9 @@ def arguments(parser):
     group.add_argument('--cxx', help='Use the given C++ compiler')
     group.add_argument('--cxxflag', help='Pass the given flag to the C++ compiler',
                        action='append', default=[])
-    group.add_argument('--use-color', help='Force C++ compiler colored output',
-                       action='store_true', default=True)
+    group.add_argument('--no-force-color',
+                       help='Disable forced C++ compiler colored output',
+                       action='store_true', default=False)
     group.add_argument('--release', help='Build in release mode', action='store_true',
                        default=False)
     group.add_argument('--ld',
@@ -75,7 +76,7 @@ def configure(ctx):
         kw['debug'] = True
         clang_flags.append('-fno-limit-debug-info')
 
-    if ctx.options.use_color:
+    if not ctx.options.no_force_color:
         posix_flags.append('-fdiagnostics-color')
 
     c = guess_c.static(ctx, exe=ctx.options.cc, flags=ctx.options.cflag,
