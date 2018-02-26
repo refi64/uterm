@@ -51,7 +51,7 @@ fi
 
 mkdir -p usr/bin
 cp build/uterm usr/bin
-mkdir -p usr/share/icons/hicolor
+mkdir -p usr/share/icons/hicolor/scalable/apps
 curl -Lo usr/share/icons/hicolor/scalable/apps/uterm.svg 'https://openclipart.org/download/212873/1421942630.svg'
 
 curl -Lo functions.sh \
