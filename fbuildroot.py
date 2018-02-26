@@ -25,6 +25,10 @@ def arguments(parser):
                              'lld for Clang and gold for other compilers.')
 
 
+def truthy(lst):
+    return list(filter(bool, lst))
+
+
 @fbuild.db.caches
 def pkg_config(ctx, package, *, name=None, optional=False, suffix=''):
     name = name or package
@@ -34,7 +38,7 @@ def pkg_config(ctx, package, *, name=None, optional=False, suffix=''):
     pkg = PkgConfig(ctx, package)
     ctx.logger.check('checking for %s' % name)
     try:
-        rec = Record(cflags=pkg.cflags(), ldlibs=pkg.libs())
+        rec = Record(cflags=truthy(pkg.cflags()), ldlibs=truthy(pkg.libs()))
     except fbuild.Error:
         ctx.logger.failed()
         if not optional:
