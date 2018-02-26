@@ -51,6 +51,7 @@ jobs:
 
             git clone https://github.com/felix-lang/fbuild.git
             cd fbuild
+            sed -i 's/+ cmd_string/+ str(cmd)/' lib/fbuild/context.py
             python3.6 setup.py install
       - run:
           name: Build uterm
