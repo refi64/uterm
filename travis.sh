@@ -51,8 +51,6 @@ fi
 
 mkdir -p usr/bin
 cp build/uterm usr/bin
-mkdir -p usr/share/icons/hicolor/scalable/apps
-curl -Lo usr/share/icons/hicolor/scalable/apps/uterm.svg 'https://openclipart.org/download/212873/1421942630.svg'
 
 curl -Lo functions.sh \
   https://raw.githubusercontent.com/probonopd/AppImages/master/functions.sh
@@ -62,26 +60,23 @@ set +e
 
 patch_usr
 copy_deps
+copy_deps
+copy_deps
 delete_blacklisted
 
-DATE=`date -u +'%Y-%m-%d-%H:%M'`
-COMMIT=`git rev-parse --short HEAD`
-export APP=uterm
-export VERSION=$COMMIT-$DATE
 mkdir uterm.AppDir
 mv usr uterm.AppDir
 cp uterm.desktop uterm.AppDir
+curl -Lo uterm.AppDir/uterm.svg 'https://openclipart.org/download/212873/1421942630.svg'
 
 cd uterm.AppDir
 get_apprun
 cd ..
 
-generate_appimage
-ls
-if [ -d out ]; then
-  echo out
-  upspin cp $PWD/out/*.AppImage nightly@refi64.com/uterm
-else
-  echo ../out
-  upspin cp $PWD/../out/*.AppImage nightly@refi64.com/uterm
-fi
+DATE=`date -u +'%Y-%m-%d-%H:%M'`
+COMMIT=`git rev-parse --short HEAD`
+APPIMAGE=uterm-$COMMIT-$DATE-x86_64.AppImage
+curl -LO https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+./appimagetool-x86_64.AppImage uterm.AppDir $APPIMAGE
+
+upspin cp $PWD/$APPIMAGE nightly@refi64.com/uterm
