@@ -1,11 +1,6 @@
 #!/bin/bash
 set -ex -o pipefail
 
-curl https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-
-# sudo apt-add-repository ppa:ubuntu-toolchain-r/test
-# sudo apt-get install
-
 # yum -y install epel-release centos-release-scl
 # yum -y install https://centos7.iuscommunity.org/ius-release.rpm
 # yum -y install \
@@ -44,7 +39,7 @@ upspin user | upspin user -put
 export PKG_CONFIG_PATH=/usr/lib/pkgconfig
 # XXX
 sed -i '/#include <GLES2\/gl2.h>/d' deps/skia/src/gpu/gl/egl/*.cpp
-if ! fbuild --release -j4; then
+if ! fbuild --release --cc=gcc -j4; then
   set +x
   echo '*******************************'
   echo '********** BUILD LOG **********'
