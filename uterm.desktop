@@ -3,3 +3,5 @@ Name=uterm
 Exec=uterm
 Type=application
 Categories=System;Development;
+# TODO
+Icon=uterm

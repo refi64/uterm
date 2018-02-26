@@ -67,6 +67,7 @@ export APP=uterm
 export VERSION=$COMMIT-$DATE
 mkdir uterm.AppDir
 mv usr uterm.AppDir
+curl -Lo uterm.png 'https://openclipart.org/image/2400px/svg_to_png/212873/1421942630.png&disposition=attachment'
 cp uterm.desktop uterm.AppDir
 
 cd uterm.AppDir
