@@ -4,16 +4,16 @@ set -ex -o pipefail
 git submodule init
 git submodule update
 
-yum -y install epel-release centos-release-scl
-yum -y install https://centos7.iuscommunity.org/ius-release.rpm
-yum -y install \
-  file fuse-libs wget \
-  cmake gcc gcc-c++ git2u make \
-  fontconfig-devel freetype-devel libconfuse-devel \
-  libX11-devel libXrandr-devel libXi-devel libXinerama-devel \
-  libXcursor-devel \
-  mesa-libGL-devel mesa-libEGL-devel \
-  python36u python36u-setuptools python-argpars
+# yum -y install epel-release centos-release-scl
+# yum -y install https://centos7.iuscommunity.org/ius-release.rpm
+# yum -y install \
+#   file fuse-libs wget \
+#   cmake gcc gcc-c++ git2u make \
+#   fontconfig-devel freetype-devel libconfuse-devel \
+#   libX11-devel libXrandr-devel libXi-devel libXinerama-devel \
+#   libXcursor-devel \
+#   mesa-libGL-devel mesa-libEGL-devel \
+#   python36u python36u-setuptools python-argparse
 
 curl -Lo upspin.tar.gz https://upspin.io/dl/upspin.linux_amd64.tar.gz
 tar -C /usr/bin -xvf upspin.tar.gz
@@ -31,11 +31,24 @@ make -j4 install
 
 git clone https://github.com/felix-lang/fbuild.git
 cd fbuild
-python3.6 setup.py install
+python3 setup.py install
 
 upspin keygen -curve p256 -secretseed $UPSPIN_KEY ~/.ssh/nightly@refi64.com
 upspin signup -server=upspin.refi64.com nightly@refi64.com ||:
 upspin user | upspin user -put
+
+export PKG_CONFIG_PATH=/usr/lib/pkgconfig
+# XXX
+sed -i '/#include <GLES2\/gl2.h>/d' deps/skia/src/gpu/gl/egl/*.cpp
+if ! fbuild --release --ld=gold -j4; then
+  set +x
+  echo '*******************************'
+  echo '********** BUILD LOG **********'
+  echo '*******************************'
+  echo
+  tail -200 build/fbuild.log
+  false
+fi
 
 mkdir -p usr/bin
 cp build/uterm usr/bin
