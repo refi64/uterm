@@ -23,8 +23,6 @@ def arguments(parser):
     group.add_argument('--ld',
                        help='The name of the linker to try to use. Default is ' \
                              'lld for Clang and gold for other compilers.')
-    group.add_argument('--no-test', help="Don't test the C/C++ compilers",
-                       action='store_true', default=False)
 
 
 @fbuild.db.caches
@@ -57,9 +55,6 @@ def configure(ctx):
 
     if not platform & {'linux', 'macosx'}:
         raise fbuild.ConfigFailed('Only Mac and Linux are currently supported.')
-
-    if ctx.options.no_test:
-        kw['cross_compiler'] = True
 
     if ctx.options.ld is not None:
         # Shortcut it to avoid issues on old systems (e.g. CentOS 6).
