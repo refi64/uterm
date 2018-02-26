@@ -64,7 +64,7 @@ patch_usr
 copy_deps
 delete_blacklisted
 
-DATE=`date -u +'%D-%H:%M'`
+DATE=`date -u +'%Y-%m-%d-%H:%M'`
 COMMIT=`git rev-parse --short HEAD`
 export APP=uterm
 export VERSION=$COMMIT-$DATE
@@ -78,4 +78,10 @@ cd ..
 
 generate_appimage
 ls
-upspin cp $PWD/out/*.AppImage nightly@refi64.com/uterm
+if [ -d out ]; then
+  echo out
+  upspin cp $PWD/out/*.AppImage nightly@refi64.com/uterm
+else
+  echo ../out
+  upspin cp $PWD/../out/*.AppImage nightly@refi64.com/uterm
+fi
