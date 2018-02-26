@@ -3,7 +3,7 @@ sudo: required
 # - docker
 # before_install:
 # - docker pull centos:7
-script: travis.sh
+script: ./travis.sh
 addons:
   apt:
     # sources:
