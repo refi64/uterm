@@ -51,6 +51,9 @@ fi
 
 mkdir -p usr/bin
 cp build/uterm usr/bin
+mkdir -p usr/share/icons/hicolor
+curl -Lo usr/share/icons/hicolor/scalable/apps/uterm.svg 'https://openclipart.org/download/212873/1421942630.svg'
+
 curl -Lo functions.sh \
   https://raw.githubusercontent.com/probonopd/AppImages/master/functions.sh
 
@@ -67,7 +70,6 @@ export APP=uterm
 export VERSION=$COMMIT-$DATE
 mkdir uterm.AppDir
 mv usr uterm.AppDir
-curl -Lo uterm.png 'https://openclipart.org/image/2400px/svg_to_png/212873/1421942630.png&disposition=attachment'
 cp uterm.desktop uterm.AppDir
 
 cd uterm.AppDir
