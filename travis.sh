@@ -25,10 +25,12 @@ cmake .. \
   -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_SHARED_LIBS=YES \
   -DGLFW_BUILD_EXAMPLES=NO -DGLFW_BUILD_TESTS=NO -DGLFW_BUILD_DOCS=NO
 sudo make -j4 install
+cd ../..
 
 git clone https://github.com/felix-lang/fbuild.git
 cd fbuild
 sudo python3 setup.py install
+cd ..
 
 upspin keygen -curve p256 -secretseed $UPSPIN_KEY ~/.ssh/nightly@refi64.com
 upspin signup -server=upspin.refi64.com nightly@refi64.com ||:
