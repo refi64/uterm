@@ -1,0 +1,10 @@
+sudo: required
+services:
+- docker
+before_install:
+- docker pull centos:7
+script:
+- docker run --rm --privileged -e UPSPIN_KEY=$UPSPIN_KEY -v $PWD:/workspace centos:7 bash travis.sh
+env:
+  global:
+    secure: gF7nE46f+0GDK+H02OsnRYOkTkHxz5Gsy2yU6QSK1gTNMOXOsY+7giwDUuR1oC3NQW/GM+eP8FUdIEDEbH6KEud0YUvNG3KP4MYGsnc2nIGF3vFqBg1N5UOxPfmicdpxgOi4WQGC2YDHvxB/OO8sY718MzAEambgi7Ia+mjUX6Y9QqCQMuoMJkaSA/W/FDiiQpXWi873RfBkkMu3y01Y/Pvr49Tv+SamonOa4ISNqJBpKjW1faT10fmjxnLEFPCzyE8g+OxB3uGry9Yc5gIxho7FKUPimeCKnhc+iolr+vIQmWK5n23XKVm+1j82PBX17DxN4AssXfdEjXFPhyiwXTUePLLToHZBn133H7NzEYVP6JkbGQeWc8ATsFVZKYrgnTno3/JzDrlR6feh+j/BEsn6UaEbN6mu2GQhYBnMUSHWLjv1qKawNHxGVjMBOIuqybgbE6BEWg8SGQopHIWpxQdOAvMPKLJPRvq80Q2dV6pX74uG3qUBUlt8w3zudDYVYsZABd6yvPZYudWDayPKXsGloX23DZYFkkDaMEV2o3qwY5u0uxO1kS2RC5dPatRsMljqxlsAzwiL4ZmN3xzvzAlzPaXAiKy6fIP/ea3tRPsL68hgfD65StHzRP4RY614gIvtivZn2dPURzpxTzBBsS+KF8GsZK1XdgQW7UphIqM=
