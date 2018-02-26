@@ -1,9 +1,6 @@
 #!/bin/bash
 set -ex -o pipefail
 
-git submodule init
-git submodule update
-
 # yum -y install epel-release centos-release-scl
 # yum -y install https://centos7.iuscommunity.org/ius-release.rpm
 # yum -y install \
@@ -16,7 +13,7 @@ git submodule update
 #   python36u python36u-setuptools python-argparse
 
 curl -Lo upspin.tar.gz https://upspin.io/dl/upspin.linux_amd64.tar.gz
-tar -C /usr/bin -xvf upspin.tar.gz
+sudo tar -C /usr/bin -xvf upspin.tar.gz
 rm upspin.tar.gz
 
 git clone https://github.com/glfw/glfw.git
@@ -27,11 +24,11 @@ cd build
 cmake .. \
   -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_SHARED_LIBS=YES \
   -DGLFW_BUILD_EXAMPLES=NO -DGLFW_BUILD_TESTS=NO -DGLFW_BUILD_DOCS=NO
-make -j4 install
+sudo make -j4 install
 
 git clone https://github.com/felix-lang/fbuild.git
 cd fbuild
-python3 setup.py install
+sudo python3 setup.py install
 
 upspin keygen -curve p256 -secretseed $UPSPIN_KEY ~/.ssh/nightly@refi64.com
 upspin signup -server=upspin.refi64.com nightly@refi64.com ||:
