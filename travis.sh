@@ -1,6 +1,11 @@
 #!/bin/bash
 set -ex -o pipefail
 
+curl https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+
+# sudo apt-add-repository ppa:ubuntu-toolchain-r/test
+# sudo apt-get install
+
 # yum -y install epel-release centos-release-scl
 # yum -y install https://centos7.iuscommunity.org/ius-release.rpm
 # yum -y install \
