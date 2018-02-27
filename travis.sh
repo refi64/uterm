@@ -1,17 +1,6 @@
 #!/bin/bash
 set -ex -o pipefail
 
-# yum -y install epel-release centos-release-scl
-# yum -y install https://centos7.iuscommunity.org/ius-release.rpm
-# yum -y install \
-#   file fuse-libs wget \
-#   cmake gcc gcc-c++ git2u make \
-#   fontconfig-devel freetype-devel libconfuse-devel \
-#   libX11-devel libXrandr-devel libXi-devel libXinerama-devel \
-#   libXcursor-devel \
-#   mesa-libGL-devel mesa-libEGL-devel \
-#   python36u python36u-setuptools python-argparse
-
 curl -Lo upspin.tar.gz https://upspin.io/dl/upspin.linux_amd64.tar.gz
 sudo tar -C /usr/bin -xvf upspin.tar.gz
 rm upspin.tar.gz
@@ -58,10 +47,8 @@ curl -Lo functions.sh \
 set +e
 . ./functions.sh
 
-patch_usr
 copy_deps
-copy_deps
-copy_deps
+ldd usr/bin/uterm
 delete_blacklisted
 
 mkdir uterm.AppDir
