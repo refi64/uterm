@@ -38,26 +38,25 @@ if ! fbuild --release --cc=gcc --cxx=g++ --ld=gold --no-force-color -j4; then
   false
 fi
 
-mkdir -p usr/bin
-cp build/uterm usr/bin
-
 curl -Lo functions.sh \
   https://raw.githubusercontent.com/probonopd/AppImages/master/functions.sh
 
 set +e
 . ./functions.sh
 
-copy_deps
-ldd usr/bin/uterm
-delete_blacklisted
-
 mkdir uterm.AppDir
-mv usr uterm.AppDir
-cp uterm.desktop uterm.AppDir
-curl -Lo uterm.AppDir/uterm.svg 'https://openclipart.org/download/212873/1421942630.svg'
-
 cd uterm.AppDir
+
+mkdir -p usr/bin
+cp ../build/uterm usr/bin
+cp ../uterm.desktop .
+curl -Lo uterm.svg 'https://openclipart.org/download/212873/1421942630.svg'
+
+copy_deps
+move_lib
+delete_blacklisted
 get_apprun
+
 cd ..
 
 DATE=`date -u +'%Y-%m-%d-%H:%M'`
