@@ -856,7 +856,6 @@ def build(ctx):
     if rec.xkbcommon is None:
         macros.append('USE_LIBTSM_XKBCOMMON')
 
-    print(rec.glfw.cflags, rec.egl.cflags, rec.confuse.cflags)
     rec.cxx.build_exe('uterm', Path.glob('src/*.cc'),
                       includes=abseil.includes + gl3w.includes + skia.includes +
                                fmt.includes + tsm.includes +
