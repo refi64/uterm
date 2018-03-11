@@ -4,6 +4,12 @@
 #include <stdint.h>
 #include <string>
 
+#ifdef USE_LIBTSM_XKBCOMMON
+#include "../deps/libtsm/external/xkbcommon-keysyms.h"
+#else
+#include <xkbcommon/xkbcommon-keysyms.h>
+#endif
+
 using std::string;
 using std::u32string;
 using uint = unsigned int;

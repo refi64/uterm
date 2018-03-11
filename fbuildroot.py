@@ -16,13 +16,18 @@ def arguments(parser):
     group.add_argument('--cxx', help='Use the given C++ compiler')
     group.add_argument('--cxxflag', help='Pass the given flag to the C++ compiler',
                        action='append', default=[])
-    group.add_argument('--use-color', help='Force C++ compiler colored output',
-                       action='store_true', default=True)
+    group.add_argument('--no-force-color',
+                       help='Disable forced C++ compiler colored output',
+                       action='store_true', default=False)
     group.add_argument('--release', help='Build in release mode', action='store_true',
                        default=False)
     group.add_argument('--ld',
                        help='The name of the linker to try to use. Default is ' \
                              'lld for Clang and gold for other compilers.')
+
+
+def truthy(lst):
+    return list(filter(bool, lst))
 
 
 @fbuild.db.caches
@@ -31,10 +36,10 @@ def pkg_config(ctx, package, *, name=None, optional=False, suffix=''):
     if suffix:
         suffix = ' %s' % suffix
 
+    pkg = PkgConfig(ctx, package)
     ctx.logger.check('checking for %s' % name)
     try:
-        pkg = PkgConfig(ctx, package)
-        rec = Record(cflags=pkg.cflags(), ldlibs=pkg.libs())
+        rec = Record(cflags=truthy(pkg.cflags()), ldlibs=truthy(pkg.libs()))
     except fbuild.Error:
         ctx.logger.failed()
         if not optional:
@@ -57,7 +62,9 @@ def configure(ctx):
         raise fbuild.ConfigFailed('Only Mac and Linux are currently supported.')
 
     if ctx.options.ld is not None:
-        posix_flags.append('-fuse-ld=%s' % ctx.options.ld)
+        # Shortcut it to avoid issues on old systems (e.g. CentOS 6).
+        if ctx.options.ld != 'bfd':
+            posix_flags.append('-fuse-ld=%s' % ctx.options.ld)
     else:
         clang_flags.append('-fuse-ld=lld')
         nonclang_flags.append('-fuse-ld=gold')
@@ -69,7 +76,7 @@ def configure(ctx):
         kw['debug'] = True
         clang_flags.append('-fno-limit-debug-info')
 
-    if ctx.options.use_color:
+    if not ctx.options.no_force_color:
         posix_flags.append('-fdiagnostics-color')
 
     c = guess_c.static(ctx, exe=ctx.options.cc, flags=ctx.options.cflag,
@@ -81,10 +88,10 @@ def configure(ctx):
     cxx = guess_cxx.static(ctx, exe=ctx.options.cxx, flags=ctx.options.cxxflag,
                            platform_options=[
                             ({'posix'}, {'flags+': ['-std=c++11'] + posix_flags}),
-                            ({'clang'}, {'flags+': clang_flags,
-                                         'macros':
-                                            ['__CLANG_SUPPORT_DYN_ANNOTATION__']}),
-                            ({'!clang'}, {'flags+': nonclang_flags}),
+                            ({'clang++'}, {'flags+': clang_flags,
+                                            'macros':
+                                                ['__CLANG_SUPPORT_DYN_ANNOTATION__']}),
+                            ({'!clang++'}, {'flags+': nonclang_flags}),
                            ], **kw)
 
     xkbcommon = pkg_config(ctx, 'xkbcommon', optional=True)
@@ -169,6 +176,35 @@ def generate_gl3w(ctx):
 def build_gl3w(ctx, c):
     include, src = generate_gl3w(ctx)
     return Record(includes=[include], lib=c.build_lib('gl3w', [src], includes=[include]))
+
+
+def build_fmtlib(ctx, cxx):
+    fmt = Path('deps/fmt')
+    return Record(includes=[fmt], lib=cxx.build_lib('fmt', [fmt / 'fmt' / 'format.cc'],
+                                                    include_source_dirs=False))
+
+
+def build_libtsm(ctx, c, xkbcommon):
+    base = Path('deps/libtsm')
+    src = base / 'src'
+    shl = src / 'shared'
+    tsm = src / 'tsm'
+
+    sources = Path.glob(tsm / '*.c') + [shl / 'shl-htable.c',
+                                        base / 'external' / 'wcwidth.c']
+    includes = [shl, tsm, base]
+
+    if xkbcommon is not None:
+        cflags = xkbcommon.cflags
+    else:
+        cflags = []
+
+    macros = ['_GNU_SOURCE=1']
+    if not ctx.options.release:
+        macros.append('BUILD_ENABLE_DEBUG')
+
+    return Record(includes=includes, lib=c.build_lib('tsm', sources, includes=includes,
+                                                     macros=macros, cflags=cflags))
 
 
 def skia_sources(*globs):
@@ -807,53 +843,28 @@ def build_skia(ctx, platform, cxx, freetype, fontconfig):
                   ldlibs=ldlibs)
 
 
-def build_fmtlib(ctx, cxx):
-    fmt = Path('deps/fmt')
-    return Record(includes=[fmt], lib=cxx.build_lib('fmt', [fmt / 'fmt' / 'format.cc'],
-                                                    include_source_dirs=False))
-
-
-def build_libtsm(ctx, c, xkbcommon):
-    base = Path('deps/libtsm')
-    src = base / 'src'
-    shl = src / 'shared'
-    tsm = src / 'tsm'
-
-    sources = Path.glob(tsm / '*.c') + Path.glob(shl / '*.c') + \
-              [base / 'external' / 'wcwidth.c']
-    includes = [shl, tsm, base]
-
-    if xkbcommon is not None:
-        cflags = xkbcommon.cflags
-    else:
-        cflags = []
-
-    macros = ['_GNU_SOURCE=1']
-    if not ctx.options.release:
-        macros.append('BUILD_ENABLE_DEBUG')
-
-    return Record(includes=includes, lib=c.build_lib('tsm', sources, includes=includes,
-                                                     macros=macros, cflags=cflags))
-
-
 def build(ctx):
     rec = configure(ctx)
 
     gl3w = build_gl3w(ctx, rec.c)
     abseil = build_abseil(ctx, rec.cxx)
-    skia = build_skia(ctx, rec.platform, rec.cxx, rec.freetype, rec.fontconfig)
     fmt = build_fmtlib(ctx, rec.cxx)
     tsm = build_libtsm(ctx, rec.c, rec.xkbcommon)
+    skia = build_skia(ctx, rec.platform, rec.cxx, rec.freetype, rec.fontconfig)
 
+    macros = ['UTERM_BLACK_SCREEN_WORKAROUND']
+    if rec.xkbcommon is None:
+        macros.append('USE_LIBTSM_XKBCOMMON')
+
+    print(rec.glfw.cflags, rec.egl.cflags, rec.confuse.cflags)
     rec.cxx.build_exe('uterm', Path.glob('src/*.cc'),
                       includes=abseil.includes + gl3w.includes + skia.includes +
                                fmt.includes + tsm.includes +
                                ['deps/utfcpp/source', 'deps/concurrentqueue'],
                       libs=[abseil.base, abseil.strings, abseil.stacktrace, gl3w.lib,
                             skia.lib, fmt.lib, tsm.lib],
-                      macros=['UTERM_BLACK_SCREEN_WORKAROUND'],
+                      macros=macros,
                       external_libs=['dl', 'pthread'],
-                      lflags=['-fuse-ld=lld'],
                       cflags=rec.glfw.cflags + rec.egl.cflags + rec.confuse.cflags,
                       ldlibs=rec.glfw.ldlibs + rec.egl.ldlibs + rec.confuse.ldlibs +
                              skia.ldlibs)

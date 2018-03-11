@@ -39,7 +39,7 @@ template <typename T>
 class Expect {
 public:
   Expect(const T& value);
-  Expect(const Error& error);
+  Expect(const ::Error& error);
 
   template <typename Arg>
   static Expect<T> New(Arg&& arg) { return {arg}; }
@@ -48,7 +48,7 @@ public:
   static Expect WithError(string&& error) { return New(::Error{std::move(error), 2}); }
 
   operator bool();
-  Error Error();
+  ::Error Error();
 
   T& operator *();
   T* operator ->();

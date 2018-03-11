@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=uterm
+Exec=uterm
+Type=Application
+Categories=System;Development;
+# TODO
+Icon=uterm

@@ -29,5 +29,6 @@ private:
   int m_font_defaults_size{kDefaultFontSize};
   std::vector<Font> m_fonts;
 
-  Theme m_theme{kDefaultTheme};
+  // Work around a bug in GCC <4.9: https://stackoverflow.com/q/32912921/
+  Theme m_theme = kDefaultTheme;
 };

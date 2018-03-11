@@ -1,6 +1,5 @@
 #include "keys.h"
 
-#include <xkbcommon/xkbcommon-keysyms.h>
 #include <GLFW/glfw3.h>
 
 uint32 GlfwKeyToXkbKeysym(int key) {
