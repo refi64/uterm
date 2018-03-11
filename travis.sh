@@ -61,7 +61,7 @@ cd ..
 
 DATE=`date -u +'%Y-%m-%d-%H:%M'`
 COMMIT=`git rev-parse --short HEAD`
-APPIMAGE=uterm-$COMMIT-$DATE-x86_64.AppImage
+APPIMAGE=uterm-$DATE-$COMMIT-x86_64.AppImage
 curl -LO https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
 chmod +x appimagetool-x86_64.AppImage
 ./appimagetool-x86_64.AppImage uterm.AppDir $APPIMAGE
