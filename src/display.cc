@@ -83,8 +83,11 @@ bool Display::Draw(SkCanvas *canvas) {
   }
 
   for (auto &span : dirty) {
+    bool is_primary = true;
     for (auto &renderer : m_renderers) {
-      m_text.DrawRangeWithRenderer(canvas, &renderer, span.data, span.begin, span.end);
+      m_text.DrawRangeWithRenderer(canvas, &renderer, span.data, span.begin, span.end,
+                                   is_primary);
+      is_primary = false;
     }
 
     m_attrs.UpdateWith(span.begin, span.end, [](Attr &attr) {

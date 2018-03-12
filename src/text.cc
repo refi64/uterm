@@ -1,5 +1,7 @@
 #include "text.h"
 
+#include <SkPath.h>
+
 FontStyle AttrsToFontStyle(Attr attrs) {
   if (attrs.flags & Attr::kBold) {
     return FontStyle::kBold;
@@ -67,44 +69,86 @@ void GlyphRenderer::ClearGlyph(int index) {
 }
 
 int GlyphRenderer::GetHeight() {
-  return m_styled_fonts[kStyleNormal].paint.getTextSize() + m_metrics.fBottom;
+  return m_styled_fonts[kStyleNormal].paint.getTextSize() +
+         m_styled_fonts[kStyleNormal].metrics.fBottom;
 }
 
 int GlyphRenderer::GetWidth() {
-  if (m_metrics.fAvgCharWidth) {
-    return m_metrics.fAvgCharWidth;
+  auto &styled_font = m_styled_fonts[kStyleNormal];
+
+  if (styled_font.metrics.fAvgCharWidth) {
+    return styled_font.metrics.fAvgCharWidth;
   }
 
   SkRect bounds;
   const char *s = "x";
-  m_styled_fonts[kStyleNormal].paint.setTextEncoding(SkPaint::kUTF8_TextEncoding);
-  m_styled_fonts[kStyleNormal].paint.measureText(s, sizeof(s[0]), &bounds);
+  styled_font.paint.setTextEncoding(SkPaint::kUTF8_TextEncoding);
+  styled_font.paint.measureText(s, sizeof(s[0]), &bounds);
   return bounds.width();
 }
 
 int GlyphRenderer::GetBaselineOffset() {
-  return m_metrics.fBottom;
+  return m_styled_fonts[kStyleNormal].metrics.fBottom;
 }
 
 void GlyphRenderer::DrawRange(SkCanvas *canvas, SkPoint *positions, Attr attrs,
-                              size_t begin, size_t end) {
+                              size_t begin, size_t end, bool is_primary) {
   auto style = AttrsToFontStyle(attrs);
   auto &styled_font = m_styled_fonts[FontStyleToInt(style)];
 
   auto &paint = styled_font.paint;
+  auto &metrics = styled_font.metrics;
+  SkColor color = attrs.flags & Attr::kInverse ? attrs.background : attrs.foreground;
 
   paint.setTextEncoding(SkPaint::kGlyphID_TextEncoding);
-  if (attrs.flags & Attr::kInverse) {
-    paint.setColor(attrs.background);
-  } else {
-    paint.setColor(attrs.foreground);
-  }
+  paint.setColor(color);
   canvas->drawPosText(m_glyphs.data() + begin, (end - begin) * sizeof(m_glyphs[0]),
                       positions + begin, paint);
+
+  if (is_primary && attrs.flags & Attr::kUnderline) {
+    SkScalar last_y = positions[begin].y();
+    paint.setStyle(SkPaint::kStroke_Style);
+
+    SkScalar y_offset = 0;
+    SkScalar stroke_width = SkIntToScalar(GetHeight()) / 15.0;
+    auto &metrics = styled_font.metrics;
+
+    if (metrics.fFlags & SkPaint::FontMetrics::kUnderlinePositionIsValid_Flag) {
+      y_offset = metrics.fUnderlinePosition;
+    }
+
+    if (metrics.fFlags & SkPaint::FontMetrics::kUnderlineThicknessIsValid_Flag) {
+      stroke_width = metrics.fUnderlineThickness;
+    }
+
+    for (size_t i = begin; i < end; ) {
+      SkScalar begin_x = positions[i].x();
+      while (positions[i].y() == last_y && i < end) {
+        i++;
+      }
+      SkScalar end_x = positions[i - 1].x() + GetWidth();
+
+      SkPath path;
+      path.moveTo(begin_x, last_y + y_offset);
+      path.lineTo(end_x, last_y + y_offset);
+
+      paint.setStrokeWidth(stroke_width);
+      canvas->drawPath(path, paint);
+
+      if (i < end) {
+        last_y = positions[i].y();
+        i++;
+      }
+    }
+
+    paint.setStyle(SkPaint::kFill_Style);
+  }
 }
 
 void GlyphRenderer::UpdateForFontChange() {
-  m_styled_fonts[kStyleNormal].paint.getFontMetrics(&m_metrics);
+  for (auto &styled_font : m_styled_fonts) {
+    styled_font.paint.getFontMetrics(&styled_font.metrics);
+  }
 
   for (auto &styled_font : m_styled_fonts) {
     SkPaint &paint = styled_font.paint;
@@ -155,6 +199,7 @@ void TextManager::UpdatePositions(int height, int width) {
 }
 
 void TextManager::DrawRangeWithRenderer(SkCanvas *canvas, GlyphRenderer *renderer,
-                                        Attr attrs, size_t begin, size_t end) {
-  renderer->DrawRange(canvas, m_positions.data(), attrs, begin, end);
+                                        Attr attrs, size_t begin, size_t end,
+                                        bool is_primary) {
+  renderer->DrawRange(canvas, m_positions.data(), attrs, begin, end, is_primary);
 }

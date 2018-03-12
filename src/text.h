@@ -33,7 +33,7 @@ public:
   int GetBaselineOffset();
 
   void DrawRange(SkCanvas *canvas, SkPoint *positions, Attr attrs, size_t begin,
-                 size_t end);
+                 size_t end, bool is_primary);
 private:
   void UpdateForFontChange();
 
@@ -44,12 +44,12 @@ private:
   struct StyledFont {
     sk_sp<SkTypeface> font;
     SkPaint paint;
+    SkPaint::FontMetrics metrics;
     std::array<SkGlyphID, kCharMax> glyph_cache;
   };
 
   std::array<StyledFont, kStyleEnd> m_styled_fonts;
 
-  SkPaint::FontMetrics m_metrics;
   std::vector<SkGlyphID> m_glyphs;
 };
 
@@ -73,7 +73,7 @@ public:
   Pos OffsetToPos(uint offset) { return {offset % m_cols, offset / m_cols}; }
 
   void DrawRangeWithRenderer(SkCanvas *canvas, GlyphRenderer *renderer, Attr attrs,
-                             size_t begin, size_t end);
+                             size_t begin, size_t end, bool is_primary);
 private:
   uint m_cols{0}, m_rows{0};
   std::u32string m_text;
