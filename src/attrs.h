@@ -52,9 +52,10 @@ struct Attr {
   SkColor foreground, background;
 
   static constexpr int kBold = 1<<1,
-                       kUnderline = 1<<2,
-                       kInverse = 1<<3,
-                       kProtect = 1<<4;
+                       kItalic = 1<<2,
+                       kUnderline = 1<<3,
+                       kInverse = 1<<4,
+                       kProtect = 1<<5;
   int flags{0};
   bool dirty{false};
 

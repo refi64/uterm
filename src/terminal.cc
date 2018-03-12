@@ -173,6 +173,9 @@ int Terminal::StaticDraw(tsm_screen *screen, uint32 id, const uint32 *chars, siz
   if (tattr->bold) {
     attr.flags |= Attr::kBold;
   }
+  if (tattr->italic) {
+    attr.flags |= Attr::kItalic;
+  }
   if (tattr->underline) {
     attr.flags |= Attr::kUnderline;
   }

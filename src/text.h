@@ -10,7 +10,7 @@
 #include "base.h"
 #include "terminal.h"
 
-enum class FontStyle { kNormal, kBold, kEnd };
+enum class FontStyle { kNormal, kBold, kItalic, kEnd };
 constexpr int FontStyleToInt(FontStyle style) { return static_cast<int>(style); }
 
 FontStyle AttrsToFontStyle(Attr attrs);

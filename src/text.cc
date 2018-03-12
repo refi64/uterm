@@ -5,6 +5,8 @@
 FontStyle AttrsToFontStyle(Attr attrs) {
   if (attrs.flags & Attr::kBold) {
     return FontStyle::kBold;
+  } else if (attrs.flags & Attr::kItalic) {
+    return FontStyle::kItalic;
   } else {
     return FontStyle::kNormal;
   }
@@ -38,6 +40,7 @@ void GlyphRenderer::SetFont(string name) {
   SkFontStyle styles[] = {
     SkFontStyle::Normal(),
     SkFontStyle::Bold(),
+    SkFontStyle::Italic(),
   };
 
   for (int i = 0; i < kStyleEnd; i++) {
