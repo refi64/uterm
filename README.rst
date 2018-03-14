@@ -10,6 +10,12 @@ Currently uterm has only been tested on Linux, though it should also work on OSX
 *may* also work on BSD; anyone willing to test it should be able to just edit
 ``fbuildroot.py`` to change all instances of ``{'linux'}`` to ``{'linux', 'bsd'}``.
 
+Downloading
+***********
+
+AppImages are available `here <https://upspin.refi64.com/nightly@refi64.com/uterm>`_. If
+you want to build it yourself, read on.
+
 Dependencies
 ************
 
