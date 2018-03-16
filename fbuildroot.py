@@ -24,6 +24,8 @@ def arguments(parser):
     group.add_argument('--ld',
                        help='The name of the linker to try to use. Default is ' \
                              'lld for Clang and gold for other compilers.')
+    group.add_argument('--destdir', help='Set the installation destdir', default='/')
+    group.add_argument('--prefix', help='Set the installation prefix', default='usr')
 
 
 def truthy(lst):
@@ -844,6 +846,9 @@ def build_skia(ctx, platform, cxx, freetype, fontconfig):
 
 
 def build(ctx):
+    ctx.install_destdir = ctx.options.destdir
+    ctx.install_prefix = ctx.options.prefix
+
     rec = configure(ctx)
 
     gl3w = build_gl3w(ctx, rec.c)
