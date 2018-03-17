@@ -21,10 +21,6 @@ cd fbuild
 sudo python3 setup.py install
 cd ..
 
-upspin keygen -curve p256 -secretseed $UPSPIN_KEY ~/.ssh/nightly@refi64.com
-upspin signup -server=upspin.refi64.com nightly@refi64.com ||:
-upspin user | upspin user -put
-
 export PKG_CONFIG_PATH=/usr/lib/pkgconfig
 # XXX
 sed -i '/#include <GLES2\/gl2.h>/d' deps/skia/src/gpu/gl/egl/*.cpp
@@ -37,6 +33,14 @@ if ! fbuild --release --cc=gcc --cxx=g++ --ld=gold --no-force-color -j4; then
   tail -200 build/fbuild.log
   false
 fi
+
+if [ "$TRAVIS_BRANCH" != "master" ]; then
+  exit
+fi
+
+upspin keygen -curve p256 -secretseed $UPSPIN_KEY ~/.ssh/nightly@refi64.com
+upspin signup -server=upspin.refi64.com nightly@refi64.com ||:
+upspin user | upspin user -put
 
 curl -Lo functions.sh \
   https://raw.githubusercontent.com/probonopd/AppImages/master/functions.sh
