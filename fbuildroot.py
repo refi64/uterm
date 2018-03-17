@@ -861,14 +861,17 @@ def build(ctx):
     if rec.xkbcommon is None:
         macros.append('USE_LIBTSM_XKBCOMMON')
 
-    rec.cxx.build_exe('uterm', Path.glob('src/*.cc'),
-                      includes=abseil.includes + gl3w.includes + skia.includes +
-                               fmt.includes + tsm.includes +
-                               ['deps/utfcpp/source', 'deps/concurrentqueue'],
-                      libs=[abseil.base, abseil.strings, abseil.stacktrace, gl3w.lib,
-                            skia.lib, fmt.lib, tsm.lib],
-                      macros=macros,
-                      external_libs=['dl', 'pthread'],
-                      cflags=rec.glfw.cflags + rec.egl.cflags + rec.confuse.cflags,
-                      ldlibs=rec.glfw.ldlibs + rec.egl.ldlibs + rec.confuse.ldlibs +
-                             skia.ldlibs)
+    uterm = rec.cxx.build_exe('uterm', Path.glob('src/*.cc'),
+                              includes=abseil.includes + gl3w.includes + skia.includes +
+                                       fmt.includes + tsm.includes +
+                                       ['deps/utfcpp/source', 'deps/concurrentqueue'],
+                              libs=[abseil.base, abseil.strings, abseil.stacktrace,
+                                    gl3w.lib, skia.lib, fmt.lib, tsm.lib],
+                              macros=macros,
+                              external_libs=['dl', 'pthread'],
+                              cflags=rec.glfw.cflags + rec.egl.cflags +
+                                     rec.confuse.cflags,
+                              ldlibs=rec.glfw.ldlibs + rec.egl.ldlibs +
+                                     rec.confuse.ldlibs + skia.ldlibs)
+
+    ctx.install(uterm, 'bin')
