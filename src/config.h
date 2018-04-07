@@ -19,11 +19,13 @@ public:
   Error Parse();
 
   const string & shell() const { return m_shell; }
+  int vsync() const { return m_vsync; }
   int font_defaults_size() const { return m_font_defaults_size; }
   const std::vector<Font> & fonts() const { return m_fonts; }
   const Theme & theme() const { return m_theme; }
 private:
   string m_shell;
+  int m_vsync;
 
   static constexpr int kDefaultFontSize = 16;
   int m_font_defaults_size{kDefaultFontSize};

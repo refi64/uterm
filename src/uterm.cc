@@ -72,7 +72,8 @@ int Uterm::Run() {
   ReaderThread reader{&pty};
   m_current_reader = &reader;
 
-  if (auto err = m_window.Initialize(kWidth, kHeight, m_config.theme())) {
+  if (auto err = m_window.Initialize(kWidth, kHeight, m_config.vsync(),
+                                     m_config.theme())) {
     err.Extend("while initializing window").Print();
     return 1;
   }

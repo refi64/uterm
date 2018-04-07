@@ -28,7 +28,7 @@ bool Window::isopen() {
   return !glfwWindowShouldClose(m_window);
 }
 
-Error Window::Initialize(int width, int height, const Theme& theme) {
+Error Window::Initialize(int width, int height, int vsync, const Theme& theme) {
   m_theme = &theme;
 
   glfwSetErrorCallback([](int ec, const char *err) {
@@ -59,6 +59,7 @@ Error Window::Initialize(int width, int height, const Theme& theme) {
     return Error::New("failed to create window via GLFW");
 
   glfwMakeContextCurrent(m_window);
+  glfwSwapInterval(vsync);
 
   glfwSetInputMode(m_window, GLFW_STICKY_KEYS, 1);
   glfwSetWindowUserPointer(m_window, static_cast<void*>(this));

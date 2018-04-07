@@ -153,6 +153,7 @@ Error Config::Parse() {
   cfg_opt_t opts[] = {
     // Note that the const_cast is only needed on libconfuse versions <v2.8.
     CFG_STR("shell", const_cast<char*>(m_shell.c_str()), CFGF_NONE),
+    CFG_INT("vsync", -1, CFGF_NONE),
 
     CFG_SEC("theme", theme_opts, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
     CFG_STR("current-theme", "", CFGF_NONE),
@@ -173,6 +174,7 @@ Error Config::Parse() {
   }
 
   m_shell = cfg_getstr(cfg, "shell");
+  m_vsync = cfg_getint(cfg, "vsync");
 
   const char *wanted_theme = cfg_getstr(cfg, "current-theme");
   int themes = cfg_size(cfg, "theme");

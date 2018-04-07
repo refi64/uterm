@@ -3,6 +3,10 @@ uterm
 
 uterm is a WIP terminal emulator, written in C++11 using Skia, libtsm, and GLFW.
 
+**NOTE:** There's a known issue right now where, when you first open uterm, it will
+flash rapidly for a few seconds and then look normal, except for some graphical
+glitches. If this occurs, try restarting uterm. Sorry...
+
 Supported platforms
 *******************
 
@@ -51,6 +55,13 @@ Here's an example config file (stored in ``$HOME/.config/uterm/uterm.conf``)
 
   // C-style comments are supported
 
+  // ***VERTICAL SYNC***
+  // By default, uterm uses adaptive vsync, which is given via a vsync value of -1. If you
+  // experience input lag, try setting it to 0. On the other hand, if you experience screen
+  // tearing, you can try setting it to 1, but it might cause input delays. -1 should make
+  // sure input is snappy while still avoiding tearing.
+  vsync = -1
+
   // ***FONTS**
 
   // Set the default font size.
@@ -69,7 +80,7 @@ Here's an example config file (stored in ``$HOME/.config/uterm/uterm.conf``)
   font "Roboto Mono" {}
   font Hack {}
 
-  // Theming
+  // ***THEMING***
 
   theme test {
     // You can use 0xRRGGBB style

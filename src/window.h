@@ -31,7 +31,7 @@ public:
   void set_selection_cb(SelectionCb selection_cb);
   void set_scroll_cb(ScrollCb scroll_cb);
 
-  Error Initialize(int width, int height, const Theme& theme);
+  Error Initialize(int width, int height, int vsync, const Theme& theme);
   bool isopen();
   SkCanvas * canvas() { return m_surface->getCanvas(); }
 
