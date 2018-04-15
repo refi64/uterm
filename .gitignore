@@ -1,3 +1,4 @@
 build/
 build2/
 __pycache__/
+*.prof*
