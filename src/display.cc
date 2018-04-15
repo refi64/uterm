@@ -63,8 +63,13 @@ Error Display::Resize(int width, int height) {
 bool Display::Draw(SkCanvas *canvas) {
   bool significant_redraw = m_has_updated;
 
+  if (!significant_redraw) {
+    return false;
+  }
+
   std::vector<AttrSet::Span> dirty;
   AttrSet::Span *pspan = nullptr;
+
   while ((pspan = m_attrs.NextSpan(pspan))) {
     if (!pspan->data.dirty) continue;
 
@@ -94,14 +99,6 @@ bool Display::Draw(SkCanvas *canvas) {
       attr.dirty = false;
     });
   }
-
-  #ifdef UTERM_BLACK_SCREEN_WORKAROUND
-  // Workaround a nasty driver bug where the entire screen turns black if something
-  // isn't being redrawn each frame.
-  m_attrs.UpdateWith(0, [](Attr &attr) {
-    attr.dirty = true;
-  });
-  #endif
 
   m_has_updated = false;
   return significant_redraw;

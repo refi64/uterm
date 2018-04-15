@@ -857,7 +857,7 @@ def build(ctx):
     tsm = build_libtsm(ctx, rec.c, rec.xkbcommon)
     skia = build_skia(ctx, rec.platform, rec.cxx, rec.freetype, rec.fontconfig)
 
-    macros = ['UTERM_BLACK_SCREEN_WORKAROUND']
+    macros = []
     if rec.xkbcommon is None:
         macros.append('USE_LIBTSM_XKBCOMMON')
 
@@ -868,7 +868,7 @@ def build(ctx):
                               libs=[abseil.base, abseil.strings, abseil.stacktrace,
                                     gl3w.lib, skia.lib, fmt.lib, tsm.lib],
                               macros=macros,
-                              external_libs=['dl', 'pthread'],
+                              external_libs=['dl', 'pthread', 'profiler'],
                               cflags=rec.glfw.cflags + rec.egl.cflags +
                                      rec.confuse.cflags,
                               ldlibs=rec.glfw.ldlibs + rec.egl.ldlibs +
