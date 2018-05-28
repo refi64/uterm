@@ -153,7 +153,10 @@ void Terminal::Draw() {
   m_has_updated = false;
 }
 
-static SkColor TsmAttrColorCodeToSkColor(const Theme& theme, int code) {
+static SkColor TsmAttrColorCodeToSkColor(const Theme& theme, int code, bool bold) {
+  if (bold) {
+    code += Colors::kBold;
+  }
   return theme[std::min(code, Colors::kMax)];
 }
 
@@ -174,12 +177,14 @@ int Terminal::StaticDraw(tsm_screen *screen, uint32 id, const uint32 *chars, siz
   Attr attr;
 
   if (tattr->fccode >= 0) {
-    attr.foreground = TsmAttrColorCodeToSkColor(*term->m_theme, tattr->fccode);
+    attr.foreground = TsmAttrColorCodeToSkColor(*term->m_theme, tattr->fccode,
+                                                tattr->bold);
   } else {
     attr.foreground = SkColorSetRGB(tattr->fr, tattr->fg, tattr->fb);
   }
   if (tattr->bccode >= 0) {
-    attr.background = TsmAttrColorCodeToSkColor(*term->m_theme, tattr->bccode);
+    attr.background = TsmAttrColorCodeToSkColor(*term->m_theme, tattr->bccode,
+                                                tattr->bold);
   } else {
     attr.background = SkColorSetRGB(tattr->br, tattr->bg, tattr->bb);
   }
