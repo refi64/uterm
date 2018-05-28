@@ -627,7 +627,7 @@ def build(ctx):
     uterm = rec.cxx.build_exe('uterm', Path.glob('src/*.cc'),
                               includes=abseil.includes + gl3w.includes + skia.includes +
                                        fmt.includes + tsm.includes +
-                                       ['deps/utfcpp/source', 'deps/concurrentqueue'],
+                                       ['deps/utfcpp/source', 'deps/sparsepp'],
                               libs=[abseil.base, abseil.strings, abseil.stacktrace,
                                     gl3w.lib, skia.lib, fmt.lib, tsm.lib],
                               macros=macros,

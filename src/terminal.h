@@ -74,6 +74,7 @@ private:
 
   SelectionRange m_selection_range;
   string m_selection_contents;
+  bool m_has_updated{false};
   int m_age{0};
   Attr m_default_attr;
   Pty *m_pty;

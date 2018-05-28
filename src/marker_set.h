@@ -1,7 +1,8 @@
 #pragma once
 
-#include <unordered_set>
+#include <sparsepp/spp.h>
 #include <algorithm>
+#include <unordered_set>
 #include <vector>
 
 template <typename Data, typename Hash = std::hash<Data>>
@@ -30,43 +31,75 @@ public:
   Span * NextSpan(Span *prev);
 private:
   struct Marker {
-    int refc{0};
-    Data data;
+    int *refc;
+    Data *data;
 
-    Marker(const Data &d): data{d} {}
-    bool operator==(const Marker &rhs) const { return data == rhs.data; }
+    Marker(std::nullptr_t=nullptr): data{nullptr}, refc{nullptr} {}
+    Marker(const Data &d): data{new Data{d}}, refc{new int{1}} {}
+
+    Marker(const Marker &rhs) { *this = rhs; }
+    Marker(Marker &&rhs) { *this = rhs; }
+
+    Marker &operator=(const Marker &rhs) {
+      data = rhs.data;
+      refc = rhs.refc;
+
+      if (refc != nullptr) {
+        ++*refc;
+      }
+
+      return *this;
+    }
+
+    Marker &operator=(Marker &&rhs) {
+      data = rhs.data;
+      return *this;
+    }
+
+    ~Marker() {
+      if (--refc == 0) {
+        delete data;
+      }
+    }
+
+    bool operator==(const Marker &rhs) const {
+      if (data == nullptr) {
+        return rhs.data == nullptr;
+      } else if (rhs.data == nullptr) {
+        return false;
+      }
+
+      return *data == *rhs.data;
+    }
   };
 
   struct MarkerHash {
     Hash hash;
 
-    size_t operator()(const Marker& m) const { return hash(m.data); }
+    size_t operator()(const Marker &m) const { return hash(*m.data); }
   };
 
-  void SetMarker(int index, Marker *m);
+  void SetMarker(int index, const Marker &m);
 
   Marker m_default;
-  std::unordered_set<Marker, MarkerHash> m_markers;
-  std::vector<Marker*> m_indexes;
+  spp::sparse_hash_set<Marker, MarkerHash> m_markers;
+  std::vector<Marker> m_indexes;
 };
 
 template <typename Data, typename Hash>
-MarkerSet<Data, Hash>::MarkerSet(const Data &default_data): m_default{default_data} {
-  m_default.refc = 1;
-}
+MarkerSet<Data, Hash>::MarkerSet(const Data &default_data):
+  m_default{default_data} {}
 
 template <typename Data, typename Hash>
 const Data & MarkerSet<Data, Hash>::At(size_t index) {
-  return m_indexes[index]->data;
+  return *m_indexes[index].data;
 }
 
 template <typename Data, typename Hash>
 void MarkerSet<Data, Hash>::Update(size_t begin, size_t end, const Data& data) {
   assert(end <= m_indexes.size());
 
-  auto it = m_markers.emplace(data).first;
-  // XXX: we don't modify Marker's data, so it's hash should stay intact.
-  auto m = const_cast<Marker*>(&*it);
+  const Marker &m = *m_markers.emplace(data).first;
 
   for (size_t i = begin; i < end; i++) {
     SetMarker(i, m);
@@ -87,7 +120,7 @@ void MarkerSet<Data, Hash>::UpdateWith(size_t begin, size_t end, F func) {
   assert(end <= m_indexes.size());
 
   for (size_t index = begin; index < end; index++) {
-    Data data = m_indexes[index]->data;
+    Data data = *m_indexes[index].data;
     func(data);
     Update(index, data);
   }
@@ -115,7 +148,7 @@ void MarkerSet<Data, Hash>::Resize(size_t sz) {
     m_indexes.resize(sz, nullptr);
 
     for (int i = first_sz; i < sz; i++) {
-      SetMarker(i, &m_default);
+      SetMarker(i, m_default);
     }
   }
 }
@@ -131,29 +164,25 @@ typename MarkerSet<Data, Hash>::Span * MarkerSet<Data, Hash>::NextSpan(
   }
 
   size_t end = begin+1;
-  assert(m_indexes[begin]);
-  Data *data = &m_indexes[begin]->data;
+  assert(m_indexes[begin].data);
+  const Data &data = *m_indexes[begin].data;
   while (end < m_indexes.size() && m_indexes[end] == m_indexes[begin]) {
     end++;
   }
 
-  return new Span{begin, end, *data};
+  return new Span{begin, end, data};
 }
 
 template <typename Data, typename Hash>
-void MarkerSet<Data, Hash>::SetMarker(int index, Marker *m) {
+void MarkerSet<Data, Hash>::SetMarker(int index, const Marker& m) {
   auto old_marker = m_indexes[index];
   if (old_marker == m) {
     return;
   }
 
   m_indexes[index] = m;
-  if (m != nullptr) {
-    m->refc++;
-  }
 
-  if (old_marker != nullptr && --old_marker->refc == 0) {
-    assert(old_marker != &m_default);
-    m_markers.erase(*old_marker);
+  if (old_marker.data != nullptr && *old_marker.refc == 2) {
+    m_markers.erase(old_marker);
   }
 }

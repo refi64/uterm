@@ -55,13 +55,13 @@ struct Attr {
                        kItalic = 1<<2,
                        kUnderline = 1<<3,
                        kInverse = 1<<4,
-                       kProtect = 1<<5;
+                       kProtect = 1<<5,
+                       kDirty = 1<<6;
   int flags{0};
-  bool dirty{false};
 
   bool operator==(const Attr &rhs) const {
     return foreground == rhs.foreground && background == rhs.background &&
-           flags == rhs.flags && dirty == rhs.dirty;
+           flags == rhs.flags;
   }
 
   struct Hash {
@@ -76,7 +76,6 @@ struct Attr {
       combine(&hash, attr.foreground);
       combine(&hash, attr.background);
       combine(&hash, attr.flags);
-      combine(&hash, attr.dirty);
       return hash;
     }
   };

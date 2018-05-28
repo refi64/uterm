@@ -57,11 +57,14 @@ void Terminal::SetSelection(Selection state, uint x, uint y) {
   case Selection::kEnd:
     assert(false);
   }
+
+  m_has_updated = true;
 }
 
 void Terminal::EndSelection() {
   if (m_selection_range.begin == m_selection_range.end) {
     ResetSelection();
+    m_has_updated = true;
   } else {
     char *buf = nullptr;
     uint sz = tsm_screen_selection_copy(m_screen, &buf);
@@ -74,11 +77,13 @@ void Terminal::ResetSelection() {
   tsm_screen_selection_reset(m_screen);
   m_selection_range.begin = m_selection_range.end = m_selection_range.origin = {0, 0};
   m_selection_contents = "";
+  m_has_updated = true;
 }
 
 Error Terminal::Resize(int x, int y) {
   tsm_screen_resize(m_screen, x, y);
-  Draw();
+  m_has_updated = true;
+
   if (auto err = m_pty->Resize(x, y)) {
     return err.Extend("resizing terminal");
   } else {
@@ -95,10 +100,13 @@ void Terminal::Scroll(ScrollDirection direction, uint distance) {
     tsm_screen_sb_down(m_screen, distance);
     break;
   }
+
+  m_has_updated = true;
 }
 
 void Terminal::WriteToScreen(string text) {
   tsm_vte_input(m_vte, text.c_str(), text.size());
+  m_has_updated = true;
 }
 
 bool Terminal::WriteKeysymToPty(uint32 keysym, int mods) {
@@ -116,8 +124,8 @@ bool Terminal::WriteKeysymToPty(uint32 keysym, int mods) {
     for (auto c : u32) {
       WriteUnicodeToPty(c);
     }
-    Draw();
 
+    m_has_updated = true;
     return true;
   } else if (keysym == XKB_KEY_Up && mods & KeyboardModifier::kShift) {
     Scroll(ScrollDirection::kUp, 1);
@@ -126,16 +134,23 @@ bool Terminal::WriteKeysymToPty(uint32 keysym, int mods) {
     Scroll(ScrollDirection::kDown, 1);
     return true;
   } else {
+    m_has_updated = true;
     return tsm_vte_handle_keyboard(m_vte, keysym, keysym, mods, TSM_VTE_INVALID);
   }
 }
 
 bool Terminal::WriteUnicodeToPty(uint32 code) {
+  m_has_updated = true;
   return tsm_vte_handle_keyboard(m_vte, XKB_KEY_NoSymbol, XKB_KEY_NoSymbol, 0, code);
 }
 
 void Terminal::Draw() {
+  if (!m_has_updated) {
+    return;
+  }
+
   m_age = tsm_screen_draw(m_screen, StaticDraw, static_cast<void*>(this));
+  m_has_updated = false;
 }
 
 static SkColor TsmAttrColorCodeToSkColor(const Theme& theme, int code) {

@@ -64,7 +64,7 @@ public:
   int rows() { return m_rows; }
   int cols() { return m_cols; }
   char32_t cell(int x, int y);
-  void set_cell(int x, int y, char32_t value);
+  bool set_cell(int x, int y, char32_t value);
   void Resize(int x, int y);
   void UpdatePositions(int height, int width);
 

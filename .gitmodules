@@ -19,3 +19,6 @@
 	path = deps/libtsm
 	url = https://github.com/Aetf/libtsm
     branch = master
+[submodule "deps/sparsepp"]
+	path = deps/sparsepp
+	url = https://github.com/greg7mdp/sparsepp

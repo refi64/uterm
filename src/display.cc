@@ -49,7 +49,7 @@ Error Display::Resize(int width, int height) {
   UpdatePositions();
 
   m_attrs.UpdateWith(0, rows * cols, [](Attr &attr) {
-    attr.dirty = true;
+    attr.flags |= Attr::kDirty;
   });
   m_has_updated = true;
 
@@ -71,7 +71,7 @@ bool Display::Draw(SkCanvas *canvas) {
   AttrSet::Span *pspan = nullptr;
 
   while ((pspan = m_attrs.NextSpan(pspan))) {
-    if (!pspan->data.dirty) continue;
+    if (!(pspan->data.flags & Attr::kDirty)) continue;
 
     bool inverse = pspan->data.flags & Attr::kInverse;
     SkColor background;
@@ -96,7 +96,7 @@ bool Display::Draw(SkCanvas *canvas) {
     }
 
     m_attrs.UpdateWith(span.begin, span.end, [](Attr &attr) {
-      attr.dirty = false;
+      attr.flags &= ~Attr::kDirty;
     });
   }
 
@@ -105,13 +105,13 @@ bool Display::Draw(SkCanvas *canvas) {
 }
 
 void Display::TermDraw(const u32string& str, Pos pos, Attr attr, int width) {
-  m_text.set_cell(pos.x, pos.y, str[0] ? str[0] : ' ');
+  attr.flags |= Attr::kDirty;
 
-  attr.dirty = true;
+  if (m_text.set_cell(pos.x, pos.y, str[0] ? str[0] : ' ')) {
+    UpdateGlyph(pos.x, pos.y);
+  }
+
   m_attrs.Update(m_text.PosToOffset(pos), attr);
-
-  UpdateGlyph(pos.x, pos.y);
-
   m_has_updated = true;
 }
 

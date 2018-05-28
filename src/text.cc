@@ -185,8 +185,14 @@ char32_t TextManager::cell(int x, int y) {
   return m_text[y * m_cols + x];
 }
 
-void TextManager::set_cell(int x, int y, char32_t value) {
-  m_text[y * m_cols + x] = value;
+bool TextManager::set_cell(int x, int y, char32_t value) {
+  uint index = PosToOffset(x, y);
+  if (m_text[index] == value) {
+    return false;
+  }
+
+  m_text[index] = value;
+  return true;
 }
 
 void TextManager::UpdatePositions(int height, int width) {
