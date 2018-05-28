@@ -3,10 +3,6 @@ uterm
 
 uterm is a WIP terminal emulator, written in C++11 using Skia, libtsm, and GLFW.
 
-**NOTE:** There's a known issue right now where, when you first open uterm, it will
-flash rapidly for a few seconds and then look normal, except for some graphical
-glitches. If this occurs, try restarting uterm. Sorry...
-
 Supported platforms
 *******************
 
