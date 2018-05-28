@@ -16,6 +16,8 @@ def arguments(parser):
     group.add_argument('--cxx', help='Use the given C++ compiler')
     group.add_argument('--cxxflag', help='Pass the given flag to the C++ compiler',
                        action='append', default=[])
+    group.add_argument('--enable-profiler', help="Enable gperftools' libprofiler",
+                       action='store_true', default=False)
     group.add_argument('--no-force-color',
                        help='Disable forced C++ compiler colored output',
                        action='store_true', default=False)
@@ -107,8 +109,14 @@ def configure(ctx):
     else:
         freetype = fontconfig = None
 
+    if ctx.options.enable_profiler:
+        libprofiler = pkg_config(ctx, 'libprofiler', optional=True)
+    else:
+        libprofiler = None
+
     return Record(platform=platform, c=c, cxx=cxx, xkbcommon=xkbcommon, glfw=glfw,
-                  egl=egl, confuse=confuse, freetype=freetype, fontconfig=fontconfig)
+                  egl=egl, confuse=confuse, freetype=freetype, fontconfig=fontconfig,
+                  libprofiler=libprofiler)
 
 
 def prefixed_sources(prefix, paths, glob=False, ignore=None):
@@ -631,10 +639,11 @@ def build(ctx):
                               libs=[abseil.base, abseil.strings, abseil.stacktrace,
                                     gl3w.lib, skia.lib, fmt.lib, tsm.lib],
                               macros=macros,
-                              external_libs=['dl', 'pthread', 'profiler'],
+                              external_libs=['dl', 'pthread'],
                               cflags=rec.glfw.cflags + rec.egl.cflags +
                                      rec.confuse.cflags,
                               ldlibs=rec.glfw.ldlibs + rec.egl.ldlibs +
-                                     rec.confuse.ldlibs + skia.ldlibs)
+                                     rec.confuse.ldlibs + skia.ldlibs +
+                                     (rec.libprofiler and rec.libprofiler.ldlibs or []))
 
     ctx.install(uterm, 'bin')
