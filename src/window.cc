@@ -2,9 +2,6 @@
 #include "terminal.h"
 #include "keys.h"
 
-#include <gl/GrGLInterface.h>
-#include <gl/GrGLUtil.h>
-
 #include <absl/memory/memory.h>
 
 const int kGLMajor = 3, kGLMinor = 3, kSamples = 4;
