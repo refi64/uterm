@@ -7,7 +7,7 @@
 
 #include <absl/memory/memory.h>
 
-const int kGLMajor = 3, kGLMinor = 0, kSamples = 0, kStencilBits = 8;
+const int kGLMajor = 3, kGLMinor = 3, kSamples = 4;
 
 Window::Window() {}
 
@@ -40,15 +40,13 @@ Error Window::Initialize(int width, int height, int vsync, const Theme& theme) {
 
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, kGLMajor);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, kGLMinor);
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-  // Set stuff up like Skia wants it.
   glfwWindowHint(GLFW_RED_BITS, 8);
   glfwWindowHint(GLFW_GREEN_BITS, 8);
   glfwWindowHint(GLFW_BLUE_BITS, 8);
-  glfwWindowHint(GLFW_BLUE_BITS, 8);
+  glfwWindowHint(GLFW_ALPHA_BITS, 8);
   glfwWindowHint(GLFW_DOUBLEBUFFER, 1);
-  glfwWindowHint(GLFW_DEPTH_BITS, 0);
-  glfwWindowHint(GLFW_STENCIL_BITS, kStencilBits);
   glfwWindowHint(GLFW_SAMPLES, kSamples);
   #ifdef GLFW_TRANSPARENT_FRAMEBUFFER
   glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, 1);
@@ -81,26 +79,15 @@ Error Window::Initialize(int width, int height, int vsync, const Theme& theme) {
 
   glfwGetFramebufferSize(m_window, &m_fb_width, &m_fb_height);
 
-  glViewport(0, 0, m_fb_width, m_fb_height);
-  glClearColor(1, 1, 1, 1);
-  glClearStencil(0);
-  glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-  m_interface = GrGLMakeNativeInterface();
-  m_context = GrContext::MakeGL(m_interface.get());
-  if (m_context == nullptr)
-    return Error::New("failed to create GrContext");
-
-  GrGLint buffer;
-  GR_GL_GetIntegerv(m_interface.get(), GR_GL_FRAMEBUFFER_BINDING, &buffer);
-
-  m_info.fFBOID = static_cast<GrGLuint>(buffer);
+  if (auto err = m_gl.Initialize(m_fb_width, m_fb_height)) {
+    return err;
+  }
 
   if (auto err = CreateSurface()) {
     return err;
-  } else {
-    return Error::New();
   }
+
+  return Error::New();
 }
 
 string Window::ClipboardRead() {
@@ -117,22 +104,16 @@ void Window::SetTitle(const string &title) {
 }
 
 void Window::DrawAndPoll(bool significant_redraw) {
-  SkPaint paint;
-  paint.setBlendMode(SkBlendMode::kSrc);
-
-  sk_sp<SkImage> image;
   if (significant_redraw) {
-    image = m_surface->makeImageSnapshot();
-  }
-
-  canvas()->flush();
-  glfwSwapBuffers(m_window);
-
-  if (significant_redraw) {
-    canvas()->drawImage(image.get(), 0, 0, &paint);
+    SkPixmap pixmap;
     canvas()->flush();
-    glfwSwapBuffers(m_window);
+    canvas()->peekPixels(&pixmap);
+
+    m_gl.UpdateTextureData(pixmap.addr());
   }
+
+  m_gl.Draw();
+  glfwSwapBuffers(m_window);
 
   bool previous_selection_status = m_selection_active;
   glfwPollEvents();
@@ -152,20 +133,12 @@ void Window::DrawAndPoll(bool significant_redraw) {
 }
 
 Error Window::CreateSurface() {
-  m_surface.reset();
-
-  m_target = absl::make_unique<GrBackendRenderTarget>(m_fb_width, m_fb_height, kSamples,
-                                                      kStencilBits,
-                                                      kSkia8888_GrPixelConfig,
-                                                      m_info);
-
-  SkSurfaceProps props{SkSurfaceProps::kLegacyFontHost_InitType};
-
-  m_surface = SkSurface::MakeFromBackendRenderTarget(m_context.get(), *m_target,
-                                                     kBottomLeft_GrSurfaceOrigin,
-                                                     nullptr, &props);
-  if (m_surface == nullptr)
+  auto info = SkImageInfo::Make(m_fb_width, m_fb_height, kRGBA_8888_SkColorType,
+                                kPremul_SkAlphaType);
+  m_surface = SkSurface::MakeRaster(info);
+  if (m_surface == nullptr) {
     return Error::New("failed to create SkSurface");
+  }
 
   canvas()->clear((*m_theme)[Colors::kBackground]);
   return Error::New();
@@ -206,7 +179,7 @@ void Window::StaticFbResizeCallback(GLFWwindow *glfw_window, int width, int heig
 
   window->m_fb_width = width;
   window->m_fb_height = height;
-  glViewport(0, 0, width, height);
+  window->m_gl.Resize(width, height);
 
   if (auto err = window->CreateSurface()) {
     err.Extend("in StaticResizeCallback").Print();

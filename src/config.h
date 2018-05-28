@@ -20,12 +20,13 @@ public:
 
   const string & shell() const { return m_shell; }
   int vsync() const { return m_vsync; }
+  int fps() const { return m_fps; }
   int font_defaults_size() const { return m_font_defaults_size; }
   const std::vector<Font> & fonts() const { return m_fonts; }
   const Theme & theme() const { return m_theme; }
 private:
   string m_shell;
-  int m_vsync;
+  int m_vsync, m_fps;
 
   static constexpr int kDefaultFontSize = 16;
   int m_font_defaults_size{kDefaultFontSize};

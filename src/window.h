@@ -3,12 +3,11 @@
 #include "base.h"
 #include "error.h"
 #include "attrs.h"
+#include "gl_manager.h"
 
 #include <GL/gl3w.h>
 #include <GLFW/glfw3.h>
 
-#include <GrBackendSurface.h>
-#include <GrContext.h>
 #include <SkCanvas.h>
 #include <SkSurface.h>
 
@@ -63,12 +62,8 @@ private:
 
   GLFWwindow *m_window{nullptr};
   GLFWcursor *m_cursor{nullptr};
+  GLManager m_gl;
   int m_fb_width, m_fb_height;
   bool m_selection_active{false};
-
-  GrGLFramebufferInfo m_info;
-  sk_sp<const GrGLInterface> m_interface;
-  sk_sp<GrContext> m_context;
-  std::unique_ptr<GrBackendRenderTarget> m_target;
   sk_sp<SkSurface> m_surface;
 };

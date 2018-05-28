@@ -99,8 +99,29 @@ int Uterm::Run() {
   m_window.set_selection_cb(std::bind(&Uterm::HandleSelection, this, _1, _2, _3));
   m_window.set_scroll_cb(std::bind(&Uterm::HandleScroll, this, _1, _2));
 
+  double mark = 0;
+  double fps = m_config.fps();
+  int frames_current_second = 0;
+
   while (m_window.isopen() && !reader.done()) {
     SkCanvas *canvas = m_window.canvas();
+
+    double current = glfwGetTime();
+    if (current - 1 >= mark) {
+      frames_current_second = 0;
+      mark = glfwGetTime();
+    } else {
+      frames_current_second++;
+      double since_last_second = current - mark;
+
+      int expected_frames = since_last_second * fps;
+      double expected_position = expected_frames / fps;
+      double actual_position = frames_current_second / fps;
+
+      if (actual_position > expected_position) {
+        usleep((actual_position - expected_position) * 1000000);
+      }
+    }
 
     string buffer = reader.buffer().ReadAndClear();
     if (!buffer.empty()) {
