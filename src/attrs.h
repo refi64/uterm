@@ -25,29 +25,6 @@ namespace Colors {
 
 using Theme = std::array<SkColor, Colors::kMax + 1>;
 
-static constexpr Theme kDefaultTheme{
-  SkColorSetRGB(0x00, 0x00, 0x00),  // kBlack
-  SkColorSetRGB(0xcd, 0x00, 0x00),  // kRed
-  SkColorSetRGB(0x00, 0xcd, 0x00),  // kGreen
-  SkColorSetRGB(0xcd, 0xcd, 0x00),  // kYellow
-  SkColorSetRGB(0x00, 0x00, 0xee),  // kBlue
-  SkColorSetRGB(0xcd, 0x00, 0xcd),  // kMagenta
-  SkColorSetRGB(0x00, 0xcd, 0xcd),  // kCyan
-  SkColorSetRGB(0xe5, 0xe5, 0xe5),  // kWhite
-
-  SkColorSetRGB(0x7f, 0x7f, 0x7f),  // kBlack + kBold
-  SkColorSetRGB(0xff, 0x00, 0x00),  // kRed + kBold
-  SkColorSetRGB(0x00, 0xff, 0x00),  // kGreen + kBold
-  SkColorSetRGB(0xff, 0xff, 0x00),  // kYellow + kBold
-  SkColorSetRGB(0x5c, 0x5c, 0xff),  // kBlue + kBold
-  SkColorSetRGB(0xff, 0x00, 0xff),  // kMagenta + kBold
-  SkColorSetRGB(0x00, 0xff, 0xff),  // kCyan + kBold
-  SkColorSetRGB(0xff, 0xff, 0xff),  // kWhite + kBold
-
-  SkColorSetRGB(0xff, 0xff, 0xff),         // kForeground
-  SkColorSetARGB(0xef, 0x2a, 0x34, 0x39),  // kBackground
-};
-
 struct Attr {
   SkColor foreground, background;
 
