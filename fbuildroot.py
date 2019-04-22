@@ -7,6 +7,8 @@ from fbuild.record import Record
 from fbuild.path import Path
 import fbuild.db
 
+import re
+
 
 def arguments(parser):
     group = parser.add_argument_group('config options')
@@ -129,7 +131,7 @@ def prefixed_sources(prefix, paths, glob=False, ignore=None):
 
         if glob:
             for subpath in path.iglob():
-                if ignore is None or ignore not in subpath:
+                if ignore is None or not re.search(ignore, subpath):
                     files.append(subpath)
         else:
             files.append(path)
@@ -138,7 +140,7 @@ def prefixed_sources(prefix, paths, glob=False, ignore=None):
 
 
 def abseil_sources(*globs):
-    return prefixed_sources('deps/abseil/absl', globs, glob=True, ignore='_test')
+    return prefixed_sources('deps/abseil/absl', globs, glob=True, ignore='_test|_benchmark')
 
 
 def build_abseil(ctx, cxx):
@@ -161,6 +163,8 @@ def build_abseil(ctx, cxx):
 
     abseil.stacktrace = cxx.build_lib('abseil_stacktrace',
                                       abseil_sources('debugging/stacktrace.cc',
+                                                     'debugging/symbolize.cc',
+                                                     'debugging/failure_signal_handler.cc',
                                                      'debugging/internal/*.cc'),
                                       includes=abseil.includes)
 

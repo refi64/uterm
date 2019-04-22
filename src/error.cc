@@ -2,12 +2,7 @@
 #include <errno.h>
 
 #include <absl/debugging/stacktrace.h>
-
-// XXX
-#include <absl/debugging/internal/elf_mem_image.h>
-#ifdef ABSL_HAVE_ELF_MEM_IMAGE
-#include <absl/debugging/internal/vdso_support.h>
-#endif
+#include <absl/debugging/symbolize.h>
 
 constexpr int kStackMax = 32;
 
@@ -15,9 +10,7 @@ Error::Error(): m_present{false} {}
 
 Error::Error(const string& error, int skip): m_present{true},
                                              m_stack(kStackMax, nullptr) {
-  int stack_len;
-  std::vector<int> sizes(kStackMax, 0);
-  int depth = absl::GetStackFrames(m_stack.data(), sizes.data(), kStackMax, skip);
+  int depth = absl::GetStackTrace(m_stack.data(), m_stack.size(), skip);
   m_stack.resize(depth);
 
   Extend(error);
@@ -37,22 +30,14 @@ void Error::Print() {
   }
 
   if (!m_stack.empty()) {
-    #ifdef ABSL_HAVE_ELF_MEM_IMAGE
-    absl::debugging_internal::VDSOSupport vdso;
-    absl::debugging_internal::ElfMemImage::SymbolInfo symbol;
-    #endif
-
     fmt::print("stack trace:\n");
     for (auto ptr : m_stack) {
-      #ifdef ABSL_HAVE_ELF_MEM_IMAGE
-      if (vdso.IsPresent() && vdso.LookupSymbolByAddress(ptr, &symbol)) {
-        fmt::print("  {} [{}]\n", ptr, symbol.name);
+      std::array<char, 1024> buffer;
+      if (absl::Symbolize(ptr, buffer.data(), buffer.size())) {
+        fmt::print("  {} [{}]\n", ptr, buffer.data());
       } else {
-      #endif
         fmt::print("  {} [unknown]\n", ptr);
-      #ifdef ABSL_HAVE_ELF_MEM_IMAGE
       }
-      #endif
     }
   }
 }
