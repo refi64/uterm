@@ -18,12 +18,16 @@ string ProtectedBuffer::ReadAndClear() {
 }
 
 ReaderThread::ReaderThread(Pty *pty): m_thread{&ReaderThread::StaticRun, this, pty} {}
+ReaderThread::~ReaderThread() { Stop(); }
 
 void ReaderThread::Interrupt() {
-  pthread_kill(m_thread.native_handle(), SIGUSR1);
+  if (m_thread.joinable())
+    pthread_kill(m_thread.native_handle(), SIGUSR1);
 }
 
 void ReaderThread::Stop() {
+  if (!m_thread.joinable()) return;
+
   m_done_flag.set();
   Interrupt();
   m_thread.join();

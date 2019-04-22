@@ -29,6 +29,7 @@ private:
 class ReaderThread {
 public:
   ReaderThread(Pty *pty);
+  ~ReaderThread();
 
   void Interrupt();
   void Stop();
