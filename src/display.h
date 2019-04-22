@@ -19,7 +19,7 @@ public:
   void EndSelection();
 
   Error Resize(int width, int height);
-  bool Draw(SkCanvas *canvas);
+  bool Draw(SkCanvas *canvas, bool lazy_updating);
 private:
   void TermDraw(const u32string& str, Pos pos, Attr attr, int width);
   void UpdateWidth();

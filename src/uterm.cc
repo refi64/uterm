@@ -72,7 +72,7 @@ int Uterm::Run() {
   ReaderThread reader{&pty};
   m_current_reader = &reader;
 
-  if (auto err = m_window.Initialize(kWidth, kHeight, m_config.vsync(),
+  if (auto err = m_window.Initialize(kWidth, kHeight, m_config.hwaccel(), m_config.vsync(),
                                      m_config.theme())) {
     err.Extend("while initializing window").Print();
     return 1;
@@ -130,7 +130,7 @@ int Uterm::Run() {
 
     m_term.Draw();
 
-    bool significant_redraw = m_display.Draw(canvas);
+    bool significant_redraw = m_display.Draw(canvas, !m_config.hwaccel());
     m_window.DrawAndPoll(significant_redraw);
   }
 

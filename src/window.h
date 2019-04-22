@@ -8,6 +8,8 @@
 #include <GL/gl3w.h>
 #include <GLFW/glfw3.h>
 
+#include <GrBackendSurface.h>
+#include <GrContext.h>
 #include <SkCanvas.h>
 #include <SkSurface.h>
 
@@ -30,7 +32,7 @@ public:
   void set_selection_cb(SelectionCb selection_cb);
   void set_scroll_cb(ScrollCb scroll_cb);
 
-  Error Initialize(int width, int height, int vsync, const Theme& theme);
+  Error Initialize(int width, int height, bool hwaccel, int vsync, const Theme& theme);
   bool isopen();
   SkCanvas * canvas() { return m_surface->getCanvas(); }
 
@@ -40,6 +42,7 @@ public:
 
   void DrawAndPoll(bool significant_redraw);
 private:
+  bool m_hwaccel{true};
   const Theme *m_theme{nullptr};
 
   KeyCb m_key_cb;
@@ -62,8 +65,13 @@ private:
 
   GLFWwindow *m_window{nullptr};
   GLFWcursor *m_cursor{nullptr};
-  GLManager m_gl;
   int m_fb_width, m_fb_height;
   bool m_selection_active{false};
+
+  GLManager m_gl;
+  GrGLFramebufferInfo m_info;
+  sk_sp<const GrGLInterface> m_interface;
+  sk_sp<GrContext> m_context;
+  std::unique_ptr<GrBackendRenderTarget> m_target;
   sk_sp<SkSurface> m_surface;
 };

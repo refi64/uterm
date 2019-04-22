@@ -60,10 +60,10 @@ Error Display::Resize(int width, int height) {
   }
 }
 
-bool Display::Draw(SkCanvas *canvas) {
+bool Display::Draw(SkCanvas *canvas, bool lazy_updating) {
   bool significant_redraw = m_has_updated;
 
-  if (!significant_redraw) {
+  if (!significant_redraw && lazy_updating) {
     return false;
   }
 
@@ -71,7 +71,8 @@ bool Display::Draw(SkCanvas *canvas) {
   AttrSet::Span *pspan = nullptr;
 
   while ((pspan = m_attrs.NextSpan(pspan))) {
-    if (!(pspan->data.flags & Attr::kDirty)) continue;
+    // XXX: should ignore dirty tracking if not lazy updating
+    if (!(pspan->data.flags & Attr::kDirty) && lazy_updating) continue;
 
     bool inverse = pspan->data.flags & Attr::kInverse;
     SkColor background;

@@ -4,8 +4,6 @@
 #include "error.h"
 #include "attrs.h"
 
-#include <confuse.h>
-
 #include <vector>
 
 
@@ -43,6 +41,7 @@ public:
   Error Parse();
 
   const string & shell() const { return m_shell; }
+  bool hwaccel() const { return m_hwaccel; }
   int vsync() const { return m_vsync; }
   int fps() const { return m_fps; }
   int font_defaults_size() const { return m_font_defaults_size; }
@@ -50,6 +49,7 @@ public:
   const Theme & theme() const { return m_theme; }
 private:
   string m_shell;
+  bool m_hwaccel;
   int m_vsync, m_fps;
 
   static constexpr int kDefaultFontSize = 16;
