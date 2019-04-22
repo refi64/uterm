@@ -1,6 +1,7 @@
 #include "text.h"
 
 #include <SkPath.h>
+#include <SkTextBlob.h>
 
 FontStyle AttrsToFontStyle(Attr attrs) {
   if (attrs.flags & Attr::kBold) {
@@ -105,8 +106,14 @@ void GlyphRenderer::DrawRange(SkCanvas *canvas, SkPoint *positions, Attr attrs,
 
   paint.setTextEncoding(SkPaint::kGlyphID_TextEncoding);
   paint.setColor(color);
-  canvas->drawPosText(m_glyphs.data() + begin, (end - begin) * sizeof(m_glyphs[0]),
-                      positions + begin, paint);
+
+  SkTextBlobBuilder builder;
+  const SkTextBlobBuilder::RunBuffer& run = builder.allocRunPos(paint, end - begin);
+  std::copy(m_glyphs.data() + begin, m_glyphs.data() + end, run.glyphs);
+  // XXX: memcpy
+  memcpy(run.pos, positions + begin, (end - begin) * sizeof(positions[0]));
+
+  canvas->drawTextBlob(builder.make(), 0, 0, paint);
 
   if (is_primary && attrs.flags & Attr::kUnderline) {
     SkScalar last_y = positions[begin].y();

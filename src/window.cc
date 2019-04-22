@@ -41,7 +41,7 @@ Error Window::Initialize(int width, int height, bool hwaccel, int vsync, const T
 
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, kGLMajor);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, kGLMinor);
-  /* glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); */
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
   glfwWindowHint(GLFW_RED_BITS, 8);
   glfwWindowHint(GLFW_GREEN_BITS, 8);

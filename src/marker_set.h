@@ -63,13 +63,7 @@ private:
     }
 
     bool operator==(const Marker &rhs) const {
-      if (data == nullptr) {
-        return rhs.data == nullptr;
-      } else if (rhs.data == nullptr) {
-        return false;
-      }
-
-      return *data == *rhs.data;
+      return data == rhs.data || (data != nullptr && *data == *rhs.data);
     }
   };
 

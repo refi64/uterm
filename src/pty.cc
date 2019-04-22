@@ -1,5 +1,8 @@
 #include "pty.h"
 
+#include <absl/strings/str_join.h>
+#include <absl/strings/str_split.h>
+
 #include <sys/ioctl.h>
 #include <sys/wait.h>
 #include <termios.h>
@@ -33,6 +36,18 @@ static Error ChildSpawnTerm(const std::vector<string>& command, int slave) {
   setenv("TERM", "xterm-256color", 1);
   setenv("COLORTERM", "truecolor", 1);
 
+  if (getenv("LD_PRELOAD")) {
+    // XXX: don't pass LD_PRELOAD's libprofiler
+    auto parts = absl::StrSplit(getenv("LD_PRELOAD"), ' ');
+    std::vector<string> new_preload_parts;
+    for (auto &part : parts) {
+      if (part.find("libprofiler.so") == string::npos)
+        new_preload_parts.emplace_back(part);
+    }
+    auto new_preload = absl::StrJoin(new_preload_parts.begin(), new_preload_parts.end(), " ");
+    setenv("LD_PRELOAD", new_preload.c_str(), 1);
+  }
+
   close(0);
   close(1);
   close(2);
@@ -49,9 +64,11 @@ static Error ChildSpawnTerm(const std::vector<string>& command, int slave) {
   std::vector<char*> c_command;
   for (auto& s : command) {
     char* c = new char[s.size()+1];
-    std::copy(s.c_str(), s.c_str()+s.size()+1, c);
+    std::copy(s.c_str(), s.c_str() + s.size() + 1, c);
     c_command.push_back(c);
   }
+
+  c_command.push_back(nullptr);
 
   execv(c_command[0], c_command.data());
 

@@ -21,8 +21,8 @@ def arguments(parser):
     group.add_argument('--no-force-color',
                        help='Disable forced C++ compiler colored output',
                        action='store_true', default=False)
-    group.add_argument('--release', help='Build in release mode', action='store_true',
-                       default=False)
+    group.add_argument('--mode', help='Build in the given mode',
+                       choices=['debug', 'debugrel', 'release'], default='debug')
     group.add_argument('--ld',
                        help='The name of the linker to try to use. Default is ' \
                              'lld for Clang and gold for other compilers.')
@@ -73,10 +73,11 @@ def configure(ctx):
         clang_flags.append('-fuse-ld=lld')
         nonclang_flags.append('-fuse-ld=gold')
 
-    if ctx.options.release:
+    if ctx.options.mode in {'release', 'debugrel'}:
         kw['optimize'] = True
-        posix_flags.append('-flto')
-    else:
+        if ctx.options.mode == 'release':
+            posix_flags.append('-flto')
+    if ctx.options.mode in {'debug', 'debugrel'}:
         kw['debug'] = True
         clang_flags.append('-fno-limit-debug-info')
 
@@ -210,7 +211,7 @@ def build_libtsm(ctx, c, xkbcommon):
         cflags = []
 
     macros = ['_GNU_SOURCE=1']
-    if not ctx.options.release:
+    if ctx.options.mode == 'debug':
         macros.append('BUILD_ENABLE_DEBUG')
 
     return Record(includes=includes, lib=c.build_lib('tsm', sources, includes=includes,
