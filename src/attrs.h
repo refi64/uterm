@@ -1,5 +1,6 @@
 #pragma once
 
+#include <absl/hash/hash.h>
 #include <SkColor.h>
 
 #include <array>
@@ -41,19 +42,8 @@ struct Attr {
            flags == rhs.flags;
   }
 
-  struct Hash {
-    template <typename T>
-    static void combine(size_t *current, T value) {
-      std::hash<T> hasher;
-      *current ^= hasher(value) + 0x9e3779b9 + (*current << 6) + (*current >> 2);
-    }
-
-    size_t operator()(const Attr &attr) const {
-      size_t hash = 0;
-      combine(&hash, attr.foreground);
-      combine(&hash, attr.background);
-      combine(&hash, attr.flags);
-      return hash;
-    }
-  };
+  template <typename H>
+  friend H AbslHashValue(H h, const Attr& attr) {
+    return H::combine(std::move(h), attr.foreground, attr.background, attr.flags);
+  }
 };

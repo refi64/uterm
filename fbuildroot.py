@@ -140,7 +140,8 @@ def prefixed_sources(prefix, paths, glob=False, ignore=None):
 
 
 def abseil_sources(*globs):
-    return prefixed_sources('deps/abseil/absl', globs, glob=True, ignore='_test|_benchmark')
+    return prefixed_sources('deps/abseil/absl', globs, glob=True,
+                            ignore='_test|_benchmark|mutex_nonprod')
 
 
 def build_abseil(ctx, cxx):
@@ -167,6 +168,11 @@ def build_abseil(ctx, cxx):
                                                      'debugging/failure_signal_handler.cc',
                                                      'debugging/internal/*.cc'),
                                       includes=abseil.includes)
+
+    abseil.hash = cxx.build_lib('abseil_hash',
+                                abseil_sources('hash/internal/*.cc'),
+                                includes=abseil.includes,
+                                libs=[abseil.base, abseil.numeric, abseil.strings])
 
     return abseil
 
@@ -877,8 +883,8 @@ def build(ctx):
     uterm = rec.cxx.build_exe('uterm', Path.glob('src/*.cc'),
                               includes=abseil.includes + gl3w.includes + skia.includes +
                                        fmt.includes + tsm.includes +
-                                       ['deps/utfcpp/source', 'deps/sparsepp'],
-                              libs=[abseil.base, abseil.strings, abseil.stacktrace,
+                                       ['deps/utfcpp/source', 'deps/parallel-hashmap'],
+                              libs=[abseil.base, abseil.strings, abseil.hash, abseil.stacktrace,
                                     gl3w.lib, skia.lib, fmt.lib, tsm.lib],
                               macros=macros,
                               external_libs=['dl', 'pthread'],

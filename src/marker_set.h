@@ -1,9 +1,25 @@
 #pragma once
 
-#include <sparsepp/spp.h>
+#include <absl/algorithm/algorithm.h>
+#include <absl/container/inlined_vector.h>
+#include <absl/hash/hash.h>
 #include <algorithm>
 #include <unordered_set>
 #include <vector>
+
+#define PHMAP_USE_ABSL_HASHEQ
+
+// XXX
+namespace absl {
+  template <typename T>
+  struct EqualTo {
+    bool operator()(const T& a, const T& b) const {
+      return a == b;
+    }
+  };
+}
+
+#include <parallel_hashmap/phmap.h>
 
 template <typename Data, typename Hash = std::hash<Data>>
 class MarkerSet {
@@ -67,17 +83,15 @@ private:
     }
   };
 
-  struct MarkerHash {
-    Hash hash;
-
-    size_t operator()(const Marker &m) const { return hash(*m.data); }
-  };
-
+  template <typename H>
+  friend H AbslHashValue(H h, const Marker& marker) {
+    return H::combine(std::move(h), *marker.data);
+  }
   void SetMarker(int index, const Marker &m);
 
   Marker m_default;
-  spp::sparse_hash_set<Marker, MarkerHash> m_markers;
-  std::vector<Marker> m_indexes;
+  phmap::parallel_flat_hash_set<Marker> m_markers;
+  absl::InlinedVector<Marker, 4096> m_indexes;
 };
 
 template <typename Data, typename Hash>

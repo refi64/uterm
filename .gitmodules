@@ -22,3 +22,6 @@
 [submodule "deps/sparsepp"]
 	path = deps/sparsepp
 	url = https://github.com/greg7mdp/sparsepp
+[submodule "deps/parallel-hashmap"]
+	path = deps/parallel-hashmap
+	url = https://github.com/greg7mdp/parallel-hashmap.git

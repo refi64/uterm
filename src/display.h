@@ -34,7 +34,7 @@ private:
   TextManager m_text;
   std::vector<GlyphRenderer> m_renderers;
 
-  using AttrSet = MarkerSet<Attr, Attr::Hash>;
+  using AttrSet = MarkerSet<Attr>;
   AttrSet m_attrs;
 
   bool m_has_updated{false};

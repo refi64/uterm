@@ -1,4 +1,5 @@
 build/
 build2/
+debugrel/
 __pycache__/
 *.prof*

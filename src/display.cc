@@ -1,5 +1,7 @@
 #include "display.h"
 
+#include <absl/container/inlined_vector.h>
+
 // Clamps v to the range low (inclusive) to high (exclusive).
 template <typename T>
 T clamp(T v, T low, T high) {
@@ -67,7 +69,7 @@ bool Display::Draw(SkCanvas *canvas, bool lazy_updating) {
     return false;
   }
 
-  std::vector<AttrSet::Span> dirty;
+  absl::InlinedVector<AttrSet::Span, 64> dirty;
   AttrSet::Span *pspan = nullptr;
 
   while ((pspan = m_attrs.NextSpan(pspan))) {
