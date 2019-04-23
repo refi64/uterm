@@ -16,9 +16,8 @@ FontStyle AttrsToFontStyle(Attr attrs) {
 
 GlyphRenderer::GlyphRenderer() {
   for (auto &styled_font : m_styled_fonts) {
-    styled_font.font.setHinting(SkFontHinting::kFull);
-    // XXX: does subpixel actually make a difference here?
     styled_font.font.setEdging(SkFont::Edging::kSubpixelAntiAlias);
+    styled_font.font.setHinting(SkFontHinting::kFull);
     styled_font.font.setSubpixel(true);
   }
 }
@@ -68,16 +67,23 @@ void GlyphRenderer::ClearGlyph(int index) {
   m_glyphs[index] = m_styled_fonts[kStyleNormal].glyph_cache[' '];
 }
 
-int GlyphRenderer::GetHeight() {
+SkScalar GlyphRenderer::FindHeight() {
   return m_styled_fonts[kStyleNormal].font.getSize() +
          m_styled_fonts[kStyleNormal].metrics.fBottom;
 }
 
-int GlyphRenderer::GetWidth() {
+SkScalar GlyphRenderer::FindWidth() {
   auto &styled_font = m_styled_fonts[kStyleNormal];
 
   if (styled_font.metrics.fAvgCharWidth) {
     return styled_font.metrics.fAvgCharWidth;
+  }
+
+  if (SkGlyphID glyph = styled_font.glyph_cache['x']) {
+    SkScalar width;
+    styled_font.font.getWidthsBounds(&glyph, 1, &width, nullptr, nullptr);
+    fmt::print("{}\n", width);
+    return width;
   }
 
   SkRect bounds;
@@ -86,7 +92,7 @@ int GlyphRenderer::GetWidth() {
   return bounds.width();
 }
 
-int GlyphRenderer::GetBaselineOffset() {
+SkScalar GlyphRenderer::FindBaselineOffset() {
   return m_styled_fonts[kStyleNormal].metrics.fBottom;
 }
 
@@ -100,9 +106,9 @@ void GlyphRenderer::DrawRange(SkCanvas *canvas, SkPoint *positions, Attr attrs,
   SkColor color = attrs.flags & Attr::kInverse ? attrs.background : attrs.foreground;
 
   SkPaint paint;
-  paint.setColor(color);
-  paint.setBlendMode(SkBlendMode::kSrc);
   paint.setAntiAlias(true);
+  paint.setBlendMode(SkBlendMode::kSrc);
+  paint.setColor(color);
 
   SkTextBlobBuilder builder;
   const SkTextBlobBuilder::RunBuffer& run = builder.allocRunPos(font, end - begin);
@@ -117,7 +123,7 @@ void GlyphRenderer::DrawRange(SkCanvas *canvas, SkPoint *positions, Attr attrs,
     paint.setStyle(SkPaint::kStroke_Style);
 
     SkScalar y_offset = 0;
-    SkScalar stroke_width = SkIntToScalar(GetHeight()) / 15.0;
+    SkScalar stroke_width = SkIntToScalar(FindHeight()) / 15.0;
     auto &metrics = styled_font.metrics;
 
     if (metrics.fFlags & SkFontMetrics::kUnderlinePositionIsValid_Flag) {
@@ -133,7 +139,7 @@ void GlyphRenderer::DrawRange(SkCanvas *canvas, SkPoint *positions, Attr attrs,
       while (positions[i].y() == last_y && i < end) {
         i++;
       }
-      SkScalar end_x = positions[i - 1].x() + GetWidth();
+      SkScalar end_x = positions[i - 1].x() + FindWidth();
 
       SkPath path;
       path.moveTo(begin_x, last_y + y_offset);
@@ -195,7 +201,7 @@ bool TextManager::set_cell(int x, int y, char32_t value) {
   return true;
 }
 
-void TextManager::UpdatePositions(int height, int width) {
+void TextManager::UpdatePositions(SkScalar height, SkScalar width) {
   assert(m_text.size() == m_positions.size());
 
   for (int i=0; i<m_rows; i++) {

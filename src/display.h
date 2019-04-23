@@ -29,7 +29,7 @@ private:
   void HighlightRange(SkCanvas *canvas, Pos begin, Pos end, SkColor color);
 
   Terminal *m_term;
-  int m_char_width{-1};
+  SkScalar m_char_width{-1};
 
   TextManager m_text;
   std::vector<GlyphRenderer> m_renderers;

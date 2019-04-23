@@ -27,9 +27,9 @@ public:
   bool UpdateGlyph(char32_t c, int index, FontStyle style);
   void ClearGlyph(int index);
 
-  int GetHeight();
-  int GetWidth();
-  int GetBaselineOffset();
+  SkScalar FindHeight();
+  SkScalar FindWidth();
+  SkScalar FindBaselineOffset();
 
   void DrawRange(SkCanvas *canvas, SkPoint *positions, Attr attrs, size_t begin,
                  size_t end, bool is_primary);
@@ -64,7 +64,7 @@ public:
   char32_t cell(int x, int y);
   bool set_cell(int x, int y, char32_t value);
   void Resize(int x, int y);
-  void UpdatePositions(int height, int width);
+  void UpdatePositions(SkScalar height, SkScalar width);
 
   uint PosToOffset(int x, int y) { return y * m_cols + x; }
   uint PosToOffset(Pos pos) { return PosToOffset(pos.x, pos.y); }

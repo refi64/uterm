@@ -23,8 +23,8 @@ void Display::AddFont(string name, int size) {
 }
 
 void Display::SetSelection(Selection state, int mx, int my) {
-  int x = clamp(mx / m_char_width, 0, m_text.cols() - 1);
-  int y = clamp(my / m_renderers[0].GetHeight(), 0, m_text.rows() - 1);
+  int x = clamp<int>(mx / m_char_width, 0, m_text.cols() - 1);
+  int y = clamp<int>(my / m_renderers[0].FindHeight(), 0, m_text.rows() - 1);
 
   m_term->SetSelection(state, x, y);
 }
@@ -36,7 +36,7 @@ void Display::EndSelection() {
 Error Display::Resize(int width, int height) {
   assert(m_char_width != -1);
 
-  int rows = (height - m_renderers[0].GetBaselineOffset()) / m_renderers[0].GetHeight();
+  int rows = (height - m_renderers[0].FindBaselineOffset()) / m_renderers[0].FindHeight();
   int cols = width / m_char_width;
 
   m_text.Resize(cols, rows);
@@ -119,12 +119,12 @@ void Display::TermDraw(const u32string& str, Pos pos, Attr attr, int width) {
 }
 
 void Display::UpdateWidth() {
-  m_char_width = m_renderers[0].GetWidth();
+  m_char_width = m_renderers[0].FindWidth();
   UpdatePositions();
 }
 
 void Display::UpdatePositions() {
-  m_text.UpdatePositions(m_renderers[0].GetHeight(), m_char_width);
+  m_text.UpdatePositions(m_renderers[0].FindHeight(), m_char_width);
 }
 
 void Display::UpdateGlyphs() {
@@ -169,10 +169,10 @@ void Display::HighlightRange(SkCanvas *canvas, Pos begin, Pos end, SkColor color
     int first = y == begin.y ? begin.x : 0,
         last = y == end.y ? end.x : m_text.cols();
     SkRect rect = SkRect::MakeXYWH(m_char_width * first,
-                                   m_renderers[0].GetHeight() * y +
-                                    m_renderers[0].GetBaselineOffset(),
+                                   m_renderers[0].FindHeight() * y +
+                                    m_renderers[0].FindBaselineOffset(),
                                    m_char_width * (last - first),
-                                   m_renderers[0].GetHeight());
+                                   m_renderers[0].FindHeight());
     canvas->save();
     canvas->clipRect(rect, false);
     canvas->clear(color);
