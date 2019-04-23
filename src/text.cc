@@ -16,6 +16,9 @@ FontStyle AttrsToFontStyle(Attr attrs) {
 
 GlyphRenderer::GlyphRenderer() {
   for (auto &styled_font : m_styled_fonts) {
+    styled_font.font.setHinting(SkFontHinting::kFull);
+    // XXX: does subpixel actually make a difference here?
+    styled_font.font.setEdging(SkFont::Edging::kSubpixelAntiAlias);
     styled_font.font.setSubpixel(true);
   }
 }

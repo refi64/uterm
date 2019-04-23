@@ -7,7 +7,7 @@
 
 #include <absl/memory/memory.h>
 
-const int kGLMajor = 3, kGLMinor = 3, kGrSamples = 0, kSoftSamples = 4, kStencilBits = 8;
+const int kGLMajor = 3, kGLMinor = 3, kPreferredSamples = 8, kStencilBits = 8;
 
 Window::Window() {}
 
@@ -56,7 +56,7 @@ Error Window::Initialize(int width, int height, bool hwaccel, int vsync, const T
   glfwWindowHint(GLFW_DEPTH_BITS, 0);
   glfwWindowHint(GLFW_STENCIL_BITS, kStencilBits);
   glfwWindowHint(GLFW_DOUBLEBUFFER, 1);
-  glfwWindowHint(GLFW_SAMPLES, m_hwaccel ? kGrSamples : kSoftSamples);
+  glfwWindowHint(GLFW_SAMPLES, kPreferredSamples);
   #ifdef GLFW_TRANSPARENT_FRAMEBUFFER
   glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, 1);
   #endif
@@ -161,14 +161,17 @@ void Window::DrawAndPoll(bool significant_redraw) {
 }
 
 Error Window::CreateSurface() {
+  // XXX: proper color type detection
+  SkColorType colortype = kRGBA_8888_SkColorType;
+
   if (m_hwaccel) {
     m_surface.reset();
 
-    m_target = absl::make_unique<GrBackendRenderTarget>(m_fb_width, m_fb_height, kGrSamples,
+    int samples = m_context->maxSurfaceSampleCountForColorType(colortype);
+    m_target = absl::make_unique<GrBackendRenderTarget>(m_fb_width, m_fb_height, samples,
                                                         kStencilBits, m_info);
 
     SkSurfaceProps props{SkSurfaceProps::kLegacyFontHost_InitType};
-    // XXX: proper color type detection
     m_surface = SkSurface::MakeFromBackendRenderTarget(m_context.get(), *m_target,
                                                        kBottomLeft_GrSurfaceOrigin,
                                                        kRGBA_8888_SkColorType, nullptr,
