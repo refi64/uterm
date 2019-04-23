@@ -25,3 +25,6 @@
 [submodule "deps/parallel-hashmap"]
 	path = deps/parallel-hashmap
 	url = https://github.com/greg7mdp/parallel-hashmap.git
+[submodule "deps/gn"]
+	path = deps/gn
+	url = https://gn.googlesource.com/gn/

@@ -3,7 +3,7 @@
 #include "base.h"
 #include "error.h"
 
-#include <GL/gl3w.h>
+#include <epoxy/gl.h>
 
 class GLManager {
 public:

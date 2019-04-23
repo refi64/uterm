@@ -5,7 +5,6 @@
 #include "attrs.h"
 #include "gl_manager.h"
 
-#include <GL/gl3w.h>
 #include <GLFW/glfw3.h>
 
 #include <GrBackendSurface.h>
@@ -68,7 +67,7 @@ private:
   int m_fb_width, m_fb_height;
   bool m_selection_active{false};
 
-  GLManager m_gl;
+  std::unique_ptr<GLManager> m_gl{new GLManager};
   GrGLFramebufferInfo m_info;
   sk_sp<const GrGLInterface> m_interface;
   sk_sp<GrContext> m_context;

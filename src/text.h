@@ -1,8 +1,7 @@
 #pragma once
 
-#include <SkTypeface.h>
 #include <SkCanvas.h>
-#include <SkPaint.h>
+#include <SkFont.h>
 
 #include <array>
 #include <limits>
@@ -42,9 +41,8 @@ private:
                        kStyleEnd = FontStyleToInt(FontStyle::kEnd);
 
   struct StyledFont {
-    sk_sp<SkTypeface> font;
-    SkPaint paint;
-    SkPaint::FontMetrics metrics;
+    SkFont font;
+    SkFontMetrics metrics;
     std::array<SkGlyphID, kCharMax> glyph_cache;
   };
 

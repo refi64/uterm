@@ -160,7 +160,7 @@ static SkColor TsmAttrColorCodeToSkColor(const Theme& theme, int code, bool bold
   return theme[std::min(code, Colors::kMax)];
 }
 
-int Terminal::StaticDraw(tsm_screen *screen, uint32 id, const uint32 *chars, size_t len,
+int Terminal::StaticDraw(tsm_screen *screen, uint64 id, const uint32 *chars, size_t len,
                          uint width, uint posx, uint posy, const tsm_screen_attr *tattr,
                          tsm_age_t age, void *data) {
   Terminal *term = static_cast<Terminal*>(data);

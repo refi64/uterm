@@ -12,6 +12,12 @@ const int kGLMajor = 3, kGLMinor = 3, kGrSamples = 0, kSoftSamples = 4, kStencil
 Window::Window() {}
 
 Window::~Window() {
+  m_surface.reset();
+  m_target.reset();
+  m_context.reset();
+  m_interface.reset();
+  m_gl.reset();
+
   glfwSetCursor(m_window, nullptr);
   glfwDestroyCursor(m_cursor);
   glfwTerminate();
@@ -74,12 +80,6 @@ Error Window::Initialize(int width, int height, bool hwaccel, int vsync, const T
   m_cursor = glfwCreateStandardCursor(GLFW_IBEAM_CURSOR);
   glfwSetCursor(m_window, m_cursor);
 
-  if (gl3wInit())
-    return Error::New("failed to initialize OpenGL");
-
-  if (!gl3wIsSupported(kGLMajor, kGLMinor))
-    return Error::New("failed to ensure OpenGL >=3.0 is supported");
-
   glfwGetFramebufferSize(m_window, &m_fb_width, &m_fb_height);
 
   if (m_hwaccel) {
@@ -89,15 +89,17 @@ Error Window::Initialize(int width, int height, bool hwaccel, int vsync, const T
     glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     m_interface = GrGLMakeNativeInterface();
-    m_context = GrContext::MakeGL(m_interface.get());
+    m_context = GrContext::MakeGL(m_interface);
     if (m_context == nullptr)
       return Error::New("failed to create GrContext");
 
     GrGLint buffer;
     GR_GL_GetIntegerv(m_interface.get(), GR_GL_FRAMEBUFFER_BINDING, &buffer);
     m_info.fFBOID = static_cast<GrGLuint>(buffer);
+    // XXX
+    m_info.fFormat = GR_GL_RGBA8;
   } else {
-    if (auto err = m_gl.Initialize(m_fb_width, m_fb_height)) {
+    if (auto err = m_gl->Initialize(m_fb_width, m_fb_height)) {
       return err;
     }
   }
@@ -128,13 +130,13 @@ void Window::DrawAndPoll(bool significant_redraw) {
     canvas()->flush();
     canvas()->peekPixels(&pixmap);
 
-    m_gl.UpdateTextureData(pixmap.addr());
+    m_gl->UpdateTextureData(pixmap.addr());
   }
 
   if (m_hwaccel)
     canvas()->flush();
   else
-    m_gl.Draw();
+    m_gl->Draw();
   glfwSwapBuffers(m_window);
 
   if (m_hwaccel)
@@ -163,12 +165,13 @@ Error Window::CreateSurface() {
     m_surface.reset();
 
     m_target = absl::make_unique<GrBackendRenderTarget>(m_fb_width, m_fb_height, kGrSamples,
-                                                        kStencilBits, kSkia8888_GrPixelConfig,
-                                                        m_info);
+                                                        kStencilBits, m_info);
 
     SkSurfaceProps props{SkSurfaceProps::kLegacyFontHost_InitType};
+    // XXX: proper color type detection
     m_surface = SkSurface::MakeFromBackendRenderTarget(m_context.get(), *m_target,
-                                                       kBottomLeft_GrSurfaceOrigin, nullptr,
+                                                       kBottomLeft_GrSurfaceOrigin,
+                                                       kRGBA_8888_SkColorType, nullptr,
                                                        &props);
   } else {
     auto info = SkImageInfo::Make(m_fb_width, m_fb_height, kRGBA_8888_SkColorType,
@@ -223,7 +226,7 @@ void Window::StaticFbResizeCallback(GLFWwindow *glfw_window, int width, int heig
   if (window->m_hwaccel)
     glViewport(0, 0, width, height);
   else
-    window->m_gl.Resize(width, height);
+    window->m_gl->Resize(width, height);
 
   if (auto err = window->CreateSurface()) {
     err.Extend("in StaticResizeCallback").Print();

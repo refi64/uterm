@@ -7,18 +7,7 @@
 #include <unordered_set>
 #include <vector>
 
-#define PHMAP_USE_ABSL_HASHEQ
-
-// XXX
-namespace absl {
-  template <typename T>
-  struct EqualTo {
-    bool operator()(const T& a, const T& b) const {
-      return a == b;
-    }
-  };
-}
-
+#define PHMAP_USE_ABSL_HASH
 #include <parallel_hashmap/phmap.h>
 
 template <typename Data, typename Hash = std::hash<Data>>

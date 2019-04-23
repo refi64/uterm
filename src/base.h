@@ -14,6 +14,7 @@ using std::string;
 using std::u32string;
 using uint = unsigned int;
 using uint32 = uint32_t;
+using uint64 = uint64_t;
 
 // The state of an active selections; it's either just begun, is being
 // updated, or just finished.

@@ -5,6 +5,7 @@
 #include <absl/types/any.h>
 
 #include <errno.h>
+#include <vector>
 
 class Error {
 public:

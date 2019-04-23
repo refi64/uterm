@@ -56,7 +56,7 @@ public:
   bool WriteUnicodeToPty(uint32 code);
   void Draw();
 private:
-  static int StaticDraw(tsm_screen *screen, uint32 id, const uint32 *chars, size_t len,
+  static int StaticDraw(tsm_screen *screen, uint64 id, const uint32 *chars, size_t len,
                         uint width, uint posx, uint posy, const tsm_screen_attr *tattr,
                         tsm_age_t age, void *data);
   static void StaticWrite(tsm_vte *vte, const char *u8, size_t len, void *data);

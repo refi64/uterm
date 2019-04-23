@@ -2,6 +2,7 @@
 
 #include <SkPath.h>
 #include <SkTextBlob.h>
+#include <SkTypeface.h>
 
 FontStyle AttrsToFontStyle(Attr attrs) {
   if (attrs.flags & Attr::kBold) {
@@ -15,13 +16,7 @@ FontStyle AttrsToFontStyle(Attr attrs) {
 
 GlyphRenderer::GlyphRenderer() {
   for (auto &styled_font : m_styled_fonts) {
-    SkPaint &paint = styled_font.paint;
-
-    paint.setColor(SK_ColorWHITE);
-    paint.setTextEncoding(SkPaint::kUTF32_TextEncoding);
-    paint.setBlendMode(SkBlendMode::kSrc);
-    paint.setSubpixelText(true);
-    paint.setAntiAlias(true);
+    styled_font.font.setSubpixel(true);
   }
 }
 
@@ -31,7 +26,7 @@ void GlyphRenderer::Resize(int size) {
 
 void GlyphRenderer::SetTextSize(int height) {
   for (auto &styled_font : m_styled_fonts) {
-    styled_font.paint.setTextSize(SkIntToScalar(height));
+    styled_font.font.setSize(SkIntToScalar(height));
   }
 
   UpdateForFontChange();
@@ -45,8 +40,7 @@ void GlyphRenderer::SetFont(string name) {
   };
 
   for (int i = 0; i < kStyleEnd; i++) {
-    m_styled_fonts[i].font = SkTypeface::MakeFromName(name.c_str(), styles[i]);
-    m_styled_fonts[i].paint.setTypeface(m_styled_fonts[i].font);
+    m_styled_fonts[i].font.setTypeface(SkTypeface::MakeFromName(name.c_str(), styles[i]));
   }
 
   UpdateForFontChange();
@@ -63,8 +57,7 @@ bool GlyphRenderer::UpdateGlyph(char32_t c, int index, FontStyle style) {
     }
   }
 
-  styled_font.paint.setTextEncoding(SkPaint::kUTF32_TextEncoding);
-  styled_font.paint.textToGlyphs(&c, sizeof(c), &m_glyphs[index]);
+  styled_font.font.textToGlyphs(&c, sizeof(c), kUTF32_SkTextEncoding, &m_glyphs[index], 1);
   return m_glyphs[index] != 0;
 }
 
@@ -73,7 +66,7 @@ void GlyphRenderer::ClearGlyph(int index) {
 }
 
 int GlyphRenderer::GetHeight() {
-  return m_styled_fonts[kStyleNormal].paint.getTextSize() +
+  return m_styled_fonts[kStyleNormal].font.getSize() +
          m_styled_fonts[kStyleNormal].metrics.fBottom;
 }
 
@@ -86,8 +79,7 @@ int GlyphRenderer::GetWidth() {
 
   SkRect bounds;
   const char *s = "x";
-  styled_font.paint.setTextEncoding(SkPaint::kUTF8_TextEncoding);
-  styled_font.paint.measureText(s, sizeof(s[0]), &bounds);
+  styled_font.font.measureText(s, sizeof(s[0]), kUTF8_SkTextEncoding, &bounds);
   return bounds.width();
 }
 
@@ -100,15 +92,17 @@ void GlyphRenderer::DrawRange(SkCanvas *canvas, SkPoint *positions, Attr attrs,
   auto style = AttrsToFontStyle(attrs);
   auto &styled_font = m_styled_fonts[FontStyleToInt(style)];
 
-  auto &paint = styled_font.paint;
+  auto &font = styled_font.font;
   auto &metrics = styled_font.metrics;
   SkColor color = attrs.flags & Attr::kInverse ? attrs.background : attrs.foreground;
 
-  paint.setTextEncoding(SkPaint::kGlyphID_TextEncoding);
+  SkPaint paint;
   paint.setColor(color);
+  paint.setBlendMode(SkBlendMode::kSrc);
+  paint.setAntiAlias(true);
 
   SkTextBlobBuilder builder;
-  const SkTextBlobBuilder::RunBuffer& run = builder.allocRunPos(paint, end - begin);
+  const SkTextBlobBuilder::RunBuffer& run = builder.allocRunPos(font, end - begin);
   std::copy(m_glyphs.data() + begin, m_glyphs.data() + end, run.glyphs);
   // XXX: memcpy
   memcpy(run.pos, positions + begin, (end - begin) * sizeof(positions[0]));
@@ -123,11 +117,11 @@ void GlyphRenderer::DrawRange(SkCanvas *canvas, SkPoint *positions, Attr attrs,
     SkScalar stroke_width = SkIntToScalar(GetHeight()) / 15.0;
     auto &metrics = styled_font.metrics;
 
-    if (metrics.fFlags & SkPaint::FontMetrics::kUnderlinePositionIsValid_Flag) {
+    if (metrics.fFlags & SkFontMetrics::kUnderlinePositionIsValid_Flag) {
       y_offset = metrics.fUnderlinePosition;
     }
 
-    if (metrics.fFlags & SkPaint::FontMetrics::kUnderlineThicknessIsValid_Flag) {
+    if (metrics.fFlags & SkFontMetrics::kUnderlineThicknessIsValid_Flag) {
       stroke_width = metrics.fUnderlineThickness;
     }
 
@@ -150,26 +144,22 @@ void GlyphRenderer::DrawRange(SkCanvas *canvas, SkPoint *positions, Attr attrs,
         i++;
       }
     }
-
-    paint.setStyle(SkPaint::kFill_Style);
   }
 }
 
 void GlyphRenderer::UpdateForFontChange() {
   for (auto &styled_font : m_styled_fonts) {
-    styled_font.paint.getFontMetrics(&styled_font.metrics);
+    styled_font.font.getMetrics(&styled_font.metrics);
   }
 
   for (auto &styled_font : m_styled_fonts) {
-    SkPaint &paint = styled_font.paint;
+    SkFont &font = styled_font.font;
     auto &glyph_cache = styled_font.glyph_cache;
-
-    paint.setTextEncoding(SkPaint::kUTF8_TextEncoding);
 
     for (char c = 0; c < kCharMax; c++) {
       if (isprint(c)) {
         SkGlyphID glyph;
-        paint.textToGlyphs(&c, sizeof(c), &glyph);
+        font.textToGlyphs(&c, sizeof(c), kUTF8_SkTextEncoding, &glyph, 1);
         if (glyph) {
           glyph_cache[c] = glyph;
         }
