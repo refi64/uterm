@@ -7,6 +7,10 @@ if (NOT ${CMAKE_GENERATOR} STREQUAL Ninja)
   message(FATAL_ERROR "Ninja must be used as the build generator.")
 endif ()
 
+if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  message(WARNING "Clang is recommended for best performance")
+endif()
+
 # Needed for GN
 find_package(Python COMPONENTS Interpreter REQUIRED)
 
@@ -23,6 +27,11 @@ if (UNIX AND NOT APPLE)
 endif ()
 
 add_compile_options(-fdiagnostics-color -Wno-everything -Wno-fatal-errors)
+
+find_library(TCMALLOC NAMES tcmalloc)
+if (NOT TCMALLOC)
+  message(WARNING "tcmalloc is recommended for best performance.")
+endif ()
 
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "")
 set(UTF8_TESTS OFF CACHE BOOL "")
@@ -48,6 +57,7 @@ add_executable(uterm
   src/text.cc
   src/uterm.cc
   src/window.cc)
+target_compile_features(uterm PUBLIC cxx_std_14)
 target_include_directories(uterm PUBLIC
   ${GLFW3_INCLUDE_DIRS}
   ${EGL_INCLUDE_DIRS}
@@ -68,7 +78,8 @@ target_link_libraries(uterm
   ${GLFW3_LIBRARIES}
   ${EGL_LIBRARIES}
   ${EPOXY_LIBRARIES}
-  ${LIBCONFUSE_LIBRARIES})
+  ${LIBCONFUSE_LIBRARIES}
+  ${TCMALLOC})
 
 if (UNIX_FONT_STACK)
   target_link_libraries(uterm
