@@ -7,10 +7,10 @@
 #include <unordered_set>
 #include <vector>
 
-#define PHMAP_USE_ABSL_HASH
+#define PHMAP_USE_ABSL_HASHEQ
 #include <parallel_hashmap/phmap.h>
 
-template <typename Data, typename Hash = std::hash<Data>>
+template <typename Data>
 class MarkerSet {
 public:
   MarkerSet(const Data &default_data);
@@ -83,17 +83,17 @@ private:
   absl::InlinedVector<Marker, 4096> m_indexes;
 };
 
-template <typename Data, typename Hash>
-MarkerSet<Data, Hash>::MarkerSet(const Data &default_data):
+template <typename Data>
+MarkerSet<Data>::MarkerSet(const Data &default_data):
   m_default{default_data} {}
 
-template <typename Data, typename Hash>
-const Data & MarkerSet<Data, Hash>::At(size_t index) {
+template <typename Data>
+const Data & MarkerSet<Data>::At(size_t index) {
   return *m_indexes[index].data;
 }
 
-template <typename Data, typename Hash>
-void MarkerSet<Data, Hash>::Update(size_t begin, size_t end, const Data& data) {
+template <typename Data>
+void MarkerSet<Data>::Update(size_t begin, size_t end, const Data& data) {
   assert(end <= m_indexes.size());
 
   const Marker &m = *m_markers.emplace(data).first;
@@ -103,17 +103,17 @@ void MarkerSet<Data, Hash>::Update(size_t begin, size_t end, const Data& data) {
   }
 }
 
-template <typename Data, typename Hash>
-void MarkerSet<Data, Hash>::Update(size_t index, Data data) {
+template <typename Data>
+void MarkerSet<Data>::Update(size_t index, Data data) {
   if (index + 1 > m_indexes.size()) {
     return;
   }
   Update(index, index + 1, data);
 }
 
-template <typename Data, typename Hash>
+template <typename Data>
 template <typename F>
-void MarkerSet<Data, Hash>::UpdateWith(size_t begin, size_t end, F func) {
+void MarkerSet<Data>::UpdateWith(size_t begin, size_t end, F func) {
   assert(end <= m_indexes.size());
 
   for (size_t index = begin; index < end; index++) {
@@ -123,17 +123,17 @@ void MarkerSet<Data, Hash>::UpdateWith(size_t begin, size_t end, F func) {
   }
 }
 
-template <typename Data, typename Hash>
+template <typename Data>
 template <typename F>
-void MarkerSet<Data, Hash>::UpdateWith(size_t index, F func) {
+void MarkerSet<Data>::UpdateWith(size_t index, F func) {
   if (m_indexes.size() == 0) {
     return;
   }
   UpdateWith(index, index + 1, func);
 }
 
-template <typename Data, typename Hash>
-void MarkerSet<Data, Hash>::Resize(size_t sz) {
+template <typename Data>
+void MarkerSet<Data>::Resize(size_t sz) {
   if (m_indexes.size() > sz) {
     for (int i = sz; i < m_indexes.size(); i++) {
       SetMarker(i, nullptr);
@@ -150,9 +150,9 @@ void MarkerSet<Data, Hash>::Resize(size_t sz) {
   }
 }
 
-template <typename Data, typename Hash>
-typename MarkerSet<Data, Hash>::Span * MarkerSet<Data, Hash>::NextSpan(
-          MarkerSet<Data, Hash>::Span *prev) {
+template <typename Data>
+typename MarkerSet<Data>::Span * MarkerSet<Data>::NextSpan(
+          MarkerSet<Data>::Span *prev) {
   size_t begin = prev == nullptr ? 0 : prev->end;
   delete prev;
 
@@ -170,8 +170,8 @@ typename MarkerSet<Data, Hash>::Span * MarkerSet<Data, Hash>::NextSpan(
   return new Span{begin, end, data};
 }
 
-template <typename Data, typename Hash>
-void MarkerSet<Data, Hash>::SetMarker(int index, const Marker& m) {
+template <typename Data>
+void MarkerSet<Data>::SetMarker(int index, const Marker& m) {
   auto old_marker = m_indexes[index];
   if (old_marker == m) {
     return;
